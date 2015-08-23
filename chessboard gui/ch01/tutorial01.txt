@@ -1,0 +1,289 @@
+We will start the series by implementing a little chess game. The idea is to display all the pieces and let the user drag these pieces around using his mouse. In future articles we will continue to extend this basic example by introducing more and more complex functionalities. The first article however will focus on the very basic Gui functionalities. The programming language for this series is Java.
+
+<strong>Goal: Provide a user interface for dragging images of game pieces around.</strong>
+
+We start by introducing a few conventions that will make it easier to understand the following source code snippets. The first is that whenever we use a List object, we consider the <strong>item at index 0 to be the bottom item</strong>, while the item at index List.size()-1 will be the top item. The second conventions is, that <strong>all x and y coordinates will mark the upper left corner</strong> of the item to display. And last but not least we use the standard coordination system provided by java, meaning that the <strong>coordinate 0/0 will be the upper left corner</strong> of the screen/frame/panel/etc.
+
+Ok, so let's start. We will create three classes. One class (ChessGui) will be the main user interface class that is responsible for displaying the applications frame and drawing the background and pieces. The second class (Piece) represents a game piece with it's characteristics. The third class (PiecesDragAndDropListener) is responsible for dragging game pieces.
+
+First we create our main GUI class called ChessGui. We extend it from JPanel and we will use it for drawing the game pieces and creating the applications frame.
+
+[sourcecode language="java"]
+public class ChessGui extends JPanel{
+  //..
+}
+[/sourcecode]
+
+What we want to display is a background image that contains the chess board and the pieces that the user will be able to drag. As we need to keep track all the game pieces, we will store them in a list. The constants BOARD_START_X, BOARD_START_Y, TILE_OFFSET_X and TILE_OFFSET_Y will help us to adjust the positioning of the pieces on the screen.
+
+[sourcecode language="java"]
+public class ChessGui extends JPanel{
+       //..
+	public ChessGui() {
+		// load and set background image
+		URL urlBackgroundImg = getClass().getResource("/ch01/img/wood.jpg");
+		this.imgBackground = new ImageIcon(urlBackgroundImg).getImage();
+
+		// create and place pieces
+		//
+		// rook, knight, bishop, queen, king, bishop, knight, and rook
+		createAndAddPiece(COLOR_WHITE, TYPE_ROOK, BOARD_START_X + TILE_OFFSET_X * 0,
+				BOARD_START_Y + TILE_OFFSET_Y * 7);
+		createAndAddPiece(COLOR_WHITE, TYPE_KNIGHT, BOARD_START_X + TILE_OFFSET_X * 1,
+				BOARD_START_Y + TILE_OFFSET_Y * 7);
+		createAndAddPiece(COLOR_WHITE, TYPE_BISHOP, BOARD_START_X + TILE_OFFSET_X * 2,
+				BOARD_START_Y + TILE_OFFSET_Y * 7);
+		createAndAddPiece(COLOR_WHITE, TYPE_KING, BOARD_START_X + TILE_OFFSET_X * 3,
+				BOARD_START_Y + TILE_OFFSET_Y * 7);
+		createAndAddPiece(COLOR_WHITE, TYPE_QUEEN, BOARD_START_X + TILE_OFFSET_X * 4,
+				BOARD_START_Y + TILE_OFFSET_Y * 7);
+		createAndAddPiece(COLOR_WHITE, TYPE_BISHOP, BOARD_START_X + TILE_OFFSET_X * 5,
+				BOARD_START_Y + TILE_OFFSET_Y * 7);
+		createAndAddPiece(COLOR_WHITE, TYPE_KNIGHT, BOARD_START_X + TILE_OFFSET_X * 6,
+				BOARD_START_Y + TILE_OFFSET_Y * 7);
+		createAndAddPiece(COLOR_WHITE, TYPE_ROOK, BOARD_START_X + TILE_OFFSET_X * 7,
+				BOARD_START_Y + TILE_OFFSET_Y * 7);
+		// pawns
+		for (int i = 0; i < 8; i++) {
+			createAndAddPiece(COLOR_WHITE, TYPE_PAWN, BOARD_START_X + TILE_OFFSET_X * i,
+					BOARD_START_Y + TILE_OFFSET_Y * 6);
+		}
+
+		createAndAddPiece(COLOR_BLACK, TYPE_ROOK, BOARD_START_X + TILE_OFFSET_X * 0,
+				BOARD_START_Y + TILE_OFFSET_Y * 0);
+		createAndAddPiece(COLOR_BLACK, TYPE_KNIGHT, BOARD_START_X + TILE_OFFSET_X * 1,
+				BOARD_START_Y + TILE_OFFSET_Y * 0);
+		createAndAddPiece(COLOR_BLACK, TYPE_BISHOP, BOARD_START_X + TILE_OFFSET_X * 2,
+				BOARD_START_Y + TILE_OFFSET_Y * 0);
+		createAndAddPiece(COLOR_BLACK, TYPE_QUEEN, BOARD_START_X + TILE_OFFSET_X * 3,
+				BOARD_START_Y + TILE_OFFSET_Y * 0);
+		createAndAddPiece(COLOR_BLACK, TYPE_KING, BOARD_START_X + TILE_OFFSET_X * 4,
+				BOARD_START_Y + TILE_OFFSET_Y * 0);
+		createAndAddPiece(COLOR_BLACK, TYPE_BISHOP, BOARD_START_X + TILE_OFFSET_X * 5,
+				BOARD_START_Y + TILE_OFFSET_Y * 0);
+		createAndAddPiece(COLOR_BLACK, TYPE_KNIGHT, BOARD_START_X + TILE_OFFSET_X * 6,
+				BOARD_START_Y + TILE_OFFSET_Y * 0);
+		createAndAddPiece(COLOR_BLACK, TYPE_ROOK, BOARD_START_X + TILE_OFFSET_X * 7,
+				BOARD_START_Y + TILE_OFFSET_Y * 0);
+		for (int i = 0; i < 8; i++) {
+			createAndAddPiece(COLOR_BLACK, TYPE_PAWN, BOARD_START_X + TILE_OFFSET_X * i,
+					BOARD_START_Y + TILE_OFFSET_Y * 1);
+		}
+
+		// add mouse listeners to enable drag and drop
+		//
+		PiecesDragAndDropListener listener = new PiecesDragAndDropListener(this.pieces,
+				this);
+		this.addMouseListener(listener);
+		this.addMouseMotionListener(listener);
+
+		// create application frame and set visible
+		//
+		JFrame f = new JFrame();
+		f.setVisible(true);
+		f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		f.add(this);
+		f.setSize( this.imgBackground.getWidth(null), this.imgBackground.getHeight(null));
+	}
+     //..
+}
+[/sourcecode]
+
+The creation of the game pieces has been put into an extra method, as it is the same for all pieces. An additional advantage is, that the code is isolated and we can change the method easily later if we need to.
+
+[sourcecode language="java"]
+	//..
+
+	/**
+	 * create a game piece
+	 *
+	 * @param color color constant
+	 * @param type type constant
+	 * @param x x position of upper left corner
+	 * @param y y position of upper left corner
+	 */
+	private void createAndAddPiece(int color, int type, int x, int y) {
+		Image img = this.getImageForPiece(color, type);
+		Piece piece = new Piece(img, x, y);
+		this.pieces.add(piece);
+	}
+	//..
+[/sourcecode]
+
+The code for loading the images for the game pieces has been put into a separate method as well. One of the reasons is, that I played around with different icon sets for the pieces and having the code for generating the image filename in a single place made it a lot easier to switch from one naming convention to another.
+
+[sourcecode language="java"]
+	//..
+
+	/**
+	 * load image for given color and type. This method translates the color and
+	 * type information into a filename and loads that particular file.
+	 *
+	 * @param color color constant
+	 * @param type type constant
+	 * @return image
+	 */
+	private Image getImageForPiece(int color, int type) {
+
+		String filename = "";
+
+		filename += (color == COLOR_WHITE ? "w" : "b");
+		switch (type) {
+			case TYPE_BISHOP:
+				filename += "b";
+				break;
+			case TYPE_KING:
+				filename += "k";
+				break;
+			case TYPE_KNIGHT:
+				filename += "n";
+				break;
+			case TYPE_PAWN:
+				filename += "p";
+				break;
+			case TYPE_QUEEN:
+				filename += "q";
+				break;
+			case TYPE_ROOK:
+				filename += "r";
+				break;
+		}
+		filename += ".png";
+
+		URL urlPieceImg = getClass().getResource("/ch01/img/" + filename);
+		return new ImageIcon(urlPieceImg).getImage();
+	}
+	//..
+[/sourcecode]
+
+The paintComponent method is simply drawing the background image again as well as all the pieces in the order from bottom to top. The order is handled automatically for us, as the internal iterator will iterate the list in ascending order starting with element 0.
+
+[sourcecode language="java"]
+	//..
+	@Override
+	protected void paintComponent(Graphics g) {
+		g.drawImage(this.imgBackground, 0, 0, null);
+		for (Piece piece : this.pieces) {
+			g.drawImage(piece.getImage(), piece.getX(), piece.getY(), null);
+		}
+	}
+	//..
+[/sourcecode]
+
+The next class we create is called "Piece". It represents a game piece with its characteristics: the image representing the game piece and the x/y coordinates for displaying the game piece.
+
+[sourcecode language="java"]
+public class Piece {
+
+	private Image img;
+	private int x;
+	private int y;
+
+	//..
+ }
+[/sourcecode]
+
+The last class is PiecesDragAndDropListener. It is implementing the MouseListener and MouseMotionListener interfaces and is responsible for detecting if the mouse is currently hovering over a game piece when the user starts pressing the mouse button. If this is the case, the top most component at that position becomes the dragPiece and it is moved along with the mouse as long as the user keeps the mouse button pressed.
+
+[sourcecode language="java"]
+public class PiecesDragAndDropListener implements MouseListener, MouseMotionListener {
+
+	private List<Piece> pieces;
+	private ChessGui chessGui;
+
+	private Piece dragPiece;
+	private int dragOffsetX;
+	private int dragOffsetY;
+
+	public PiecesDragAndDropListener(List<Piece> pieces, ChessGui chessGui) {
+		this.pieces = pieces;
+		this.chessGui = chessGui;
+	}
+
+	@Override
+	public void mousePressed(MouseEvent evt) {
+		int x = evt.getPoint().x;
+		int y = evt.getPoint().y;
+
+		// find out which piece to move.
+		// we check the list from top to buttom
+		// (therefore we itereate in reverse order)
+		//
+		for (int i = this.pieces.size()-1; i >= 0; i--) {
+			Piece piece = this.pieces.get(i);
+
+			if( mouseOverPiece(piece,x,y)){
+				// calculate offset, because we do not want the drag piece
+				// to jump with it's upper left corner to the current mouse
+				// position
+				//
+				this.dragOffsetX = x - piece.getX();
+				this.dragOffsetY = y - piece.getY();
+				this.dragPiece = piece;
+				break;
+			}
+		}
+
+		// move drag piece to the top of the list
+		if(this.dragPiece != null){
+			this.pieces.remove( this.dragPiece );
+			this.pieces.add(this.dragPiece);
+		}
+	}
+
+	/**
+	 * check whether the mouse is currently over this piece
+	 * @param piece the playing piece
+	 * @param x x coordinate of mouse
+	 * @param y y coordinate of mouse
+	 * @return true if mouse is over the piece
+	 */
+	private boolean mouseOverPiece(Piece piece, int x, int y) {
+		return piece.getX() <= x
+			&& piece.getX()+piece.getWidth() >= x
+			&& piece.getY() <= y
+			&& piece.getY()+piece.getHeight() >= y;
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent arg0) {
+		this.dragPiece = null;
+	}
+
+	@Override
+	public void mouseDragged(MouseEvent evt) {
+		if(this.dragPiece != null){
+			this.dragPiece.setX(evt.getPoint().x - this.dragOffsetX);
+			this.dragPiece.setY(evt.getPoint().y - this.dragOffsetY);
+			this.chessGui.repaint();
+		}
+
+	}
+
+	//..
+}
+[/sourcecode]
+
+Looking back at the PiecesDragAndDropListener, I have to say, that I could have provided only the chessGui instance in the constructor instead of the chessGui and the list of pieces, because the chessGui includes the list of pieces. If you want you to can implement that change as an exercise on your own ;-)
+
+Event though this implementation seems very very basic, it has a couple of interesting advantages over other approaches like enforcing game rules, etc.. The main advantages are:
+
+<ul>
+<li> The application and it's source code is <b>easy to implement and understand</b>.
+<li> The approach is very good for <b>prototyping</b> games, as no application changes are required for testing new rules.
+<li> Playing with <b>house rules</b> is no problem, as the standard game rules are not enforced.
+<li> Setting up example game <b>scenarios</b> is easy as the pieces can be dragged around freely.
+</ul>
+
+However, there are also some disadvantages:
+<ul>
+<li> The user might knowingly or unknowingly make <b>invalid moves</b>.
+<li> The users have to <b>know</b> and agree the <b>rules</b> up front.
+</ul>
+
+That's it for now. Stay tuned for more.
+
+Resources:
+
+The source code (eclipse project): coming soon
+The chess icons are from: <a href="http://ixian.com/chess/jin-piece-sets/">http://ixian.com/chess/jin-piece-sets/</a>

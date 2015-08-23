@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="ch09" default="buildJar">
+	<!-- CLASSPATH for compilation -->
+	<path id="classpath">
+        <fileset dir="lib" includes="**/*.jar"/>
+    </path>
+    
+    <!-- clean build directory -->
+    <target name="clean">
+        <delete dir="build"/>
+    </target>
+
+	<!-- compile classes -->
+    <target name="compile" depends="clean">
+        <mkdir dir="build"/>
+        <javac srcdir="src" destdir="build" classpathref="classpath" includeantruntime="false"/>
+    </target>
+    
+    <!-- build the executable jar file -->
+    <target name="buildJar" depends="compile">
+    	<copy todir="build">
+    	    <fileset dir="resources"/>
+    	</copy>
+        <jar destfile="ch09.jar" basedir="build" manifest="manifest.mf" />
+    </target>
+    
+</project>

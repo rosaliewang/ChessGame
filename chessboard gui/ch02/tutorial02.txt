@@ -1,0 +1,150 @@
+In this article we will introduce the concept of a game state variable. Depending on the game state (either 'white' or 'black') the user will only be able to drag pieces corresponding to the current game state. In addition we will do some refactoring and add a button to the application to allow switching between game states.
+
+The advantage of having a game state is, that we are able to enforce some basic rules.
+
+To be able to check if a piece can be moved or not, we will have to know the color of each piece. So we add a color variable to the Piece class. At the same time we also introduce a type variable, which is not really necessary for this example, but will be usable later on. As color and type are now part of the Piece, the color and type constants were moved into the Piece class as well.
+
+[sourcecode language="java"]
+public class Piece {
+
+	public static final int COLOR_WHITE = 0;
+	public static final int COLOR_BLACK = 1;
+
+	public static final int TYPE_ROOK = 1;
+	public static final int TYPE_KNIGHT = 2;
+	public static final int TYPE_BISHOP = 3;
+	public static final int TYPE_QUEEN = 4;
+	public static final int TYPE_KING = 5;
+	public static final int TYPE_PAWN = 6;
+
+	private Image img;
+	private int x;
+	private int y;
+	private int color;
+	private int type;
+
+	//..
+}
+[/sourcecode]
+
+[sourcecode language="java"]
+public class ChessGui extends JPanel{
+       //..
+       public ChessGui(){
+       	      //..
+		createAndAddPiece(Piece.COLOR_WHITE, Piece.TYPE_ROOK, BOARD_START_X
+				+ TILE_OFFSET_X * 0, BOARD_START_Y + TILE_OFFSET_Y * 0);
+		createAndAddPiece(Piece.COLOR_WHITE, Piece.TYPE_KNIGHT, BOARD_START_X
+				+ TILE_OFFSET_X * 1, BOARD_START_Y + TILE_OFFSET_Y * 0);
+       	      //..
+       }
+       //..
+
+       //..
+	/**
+	 * create a game piece
+	 * @param color color constant
+	 * @param type type constant
+	 * @param x x position of upper left corner
+	 * @param y y position of upper left corner
+	 */
+	private void createAndAddPiece(int color, int type, int x, int y) {
+		Image img = this.getImageForPiece(color,type);
+		Piece piece = new Piece(img, x, y, color, type);
+		this.pieces.add(piece);
+	}
+	//..
+}
+[/sourcecode]
+
+The game state variable indicates which colored pieces can be moved by the user. To visualize this behavior, we introduce a button which lets the user change the game state. We also add a label that displays the current game state.
+
+[sourcecode language="java"]
+public class ChessGui extends JPanel{
+       //..
+	private int gameState = GAME_STATE_WHITE;
+	static final int GAME_STATE_WHITE = 0;
+	static final int GAME_STATE_BLACK = 1;
+
+	public ChessGui() {
+		this.setLayout(null);
+
+		//..
+
+		// button to change game state
+		JButton btnChangeGameState = new JButton("change");
+		btnChangeGameState
+				.addActionListener(new ChangeGameStateButtonActionListener(this));
+		btnChangeGameState.setBounds(0, 0, 80, 30);
+		this.add(btnChangeGameState);
+
+		// label to display game state
+		String labelText = this.getGameStateAsText();
+		this.lblGameState = new JLabel(labelText);
+		lblGameState.setBounds(0, 30, 80, 30);
+		this.add(lblGameState);
+		
+		//..
+	}
+
+  	/**
+	 * @return textual description of current game state
+	 */
+	private String getGameStateAsText() {
+		return (this.gameState == GAME_STATE_BLACK ? "black" : "while");
+	}
+
+	/**
+	 * switches between the different game states 
+	 */
+	public void changeGameState() {
+		switch (this.gameState) {
+			case GAME_STATE_BLACK:
+				this.gameState = GAME_STATE_WHITE;
+				break;
+			case GAME_STATE_WHITE:
+				this.gameState = GAME_STATE_BLACK;
+				break;
+			default:
+				throw new IllegalStateException("unknown game state:" + this.gameState);
+		}
+		this.lblGameState.setText(this.getGameStateAsText());
+	}
+
+	/**
+	 * @return current game state
+	 */
+	public int getGameState() {
+		return this.gameState;
+	}
+
+	//..
+}
+[/sourcecode]
+
+In the changeGameState() method we could have simply used an if-statement, but I have chosen to use a switch as there are usually more game states (e.g. GAME_STATE_END, ...).
+
+The new class ChangeGameStateButtonActionListener will be called whenever the user clicks the "change" button. If the button is clicked, the game state will be changed and the label will be updated.
+
+[sourcecode language="java"]
+public class ChangeGameStateButtonActionListener implements ActionListener {
+
+	private ChessGui chessGui;
+
+	public ChangeGameStateButtonActionListener(ChessGui chessGui) {
+		this.chessGui = chessGui;
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent evt) {
+		this.chessGui.changeGameState();
+	}
+}
+[/sourcecode]
+
+That's it. In the next article we will separate the internal presentation of the game from the user interface logic.
+
+Resources:
+
+The source code (eclipse project): coming soon
+The chess icons come from: <a href="http://ixian.com/chess/jin-piece-sets/">http://ixian.com/chess/jin-piece-sets/</a>

@@ -1,0 +1,237 @@
+In this article we will take a closer look at enforcing game rules.
+
+There are several ways of implementing rule enforcement. In this example I have chosen to implement the movement validation logic in a single class called MoveValidator. The MoveValidator class covers the basic chess moves for each piece. However, it does not cover all rules, as the focus of the article is on the general concept of enforcing game rules and not on implementing a fully featured chess game. Missing rules are e.g. stalemate, checkmate, en passant, castling, ...
+
+To enable move validation we simply add four lines at the beginning of our movePiece() method in the ChessGame class.
+
+[sourcecode language="java"]
+public class ChessGame {
+
+       //..
+	/**
+	 * Move piece to the specified location. If the target location is occupied
+	 * by an opponent piece, that piece is marked as 'captured'
+	 * @param sourceRow the source row (Piece.ROW_..) of the piece to move
+	 * @param sourceColumn the source column (Piece.COLUMN_..) of the piece to move
+	 * @param targetRow the target row (Piece.ROW_..)
+	 * @param targetColumn the target column (Piece.COLUMN_..)
+	 */
+	public void movePiece(int sourceRow, int sourceColumn, int targetRow, int targetColumn) {
+
+		if( !this.moveValidator.isMoveValid(sourceRow, sourceColumn, targetRow, targetColumn)){
+			System.out.println("move invalid");
+			return;
+		}
+
+		Piece piece = getNonCapturedPieceAtLocation(sourceRow, sourceColumn);
+
+		//check if the move is capturing an opponent piece
+		int opponentColor = (piece.getColor()==Piece.COLOR_BLACK?Piece.COLOR_WHITE:Piece.COLOR_BLACK);
+		if( isNonCapturedPieceAtLocation(opponentColor, targetRow, targetColumn)){
+			Piece opponentPiece = getNonCapturedPieceAtLocation( targetRow, targetColumn);
+			opponentPiece.isCaptured(true);
+		}
+
+		piece.setRow(targetRow);
+		piece.setColumn(targetColumn);
+
+		this.changeGameState();
+	}
+       //..
+
+}
+[/sourcecode]
+
+The isValidMove() method of the MoveValidator class will first check if the a piece exists at the source location. If  so, it checks if the color is matching the current game state. Then it validates if the target location is valid. Afterwards the movement is further analyzed by calling a validation method that corresponds to the moving piece type. If there is still no problem with the move, we should check for resulting stalemate and checkmate situations. However, this has been left out for this article.
+
+
+[sourcecode language="java"]
+public class MoveValidator {
+       //..
+	/**
+	 * Checks if the specified move is valid
+	 * @param sourceRow
+	 * @param sourceColumn
+	 * @param targetRow
+	 * @param targetColumn
+	 * @return true if move is valid, false if move is invalid
+	 */
+	public boolean isMoveValid(int sourceRow,
+			int sourceColumn, int targetRow, int targetColumn) {
+		
+		sourcePiece = chessGame.getNonCapturedPieceAtLocation(sourceRow, sourceColumn);
+		targetPiece = this.chessGame.getNonCapturedPieceAtLocation(targetRow, targetColumn);
+			
+		// source piece does not exist
+		if( sourcePiece == null ){
+			System.out.println("no source piece");
+			return false;
+		}
+		
+		// source piece has right color?
+		if( sourcePiece.getColor() == Piece.COLOR_WHITE
+				&& this.chessGame.getGameState() == ChessGame.GAME_STATE_WHITE){
+			// ok
+		}else if( sourcePiece.getColor() == Piece.COLOR_BLACK
+				&& this.chessGame.getGameState() == ChessGame.GAME_STATE_BLACK){
+			// ok
+		}else{
+			System.out.println("it's not your turn");
+			return false;
+		}
+		
+		// check if target location within boundaries
+		if( targetRow < Piece.ROW_1 || targetRow > Piece.ROW_8
+				|| targetColumn < Piece.COLUMN_A || targetColumn > Piece.COLUMN_H){
+			System.out.println("target row or column out of scope");
+			return false;
+		}
+
+		// validate piece movement rules
+		boolean validPieceMove = false;
+		switch (sourcePiece.getType()) {
+			case Piece.TYPE_BISHOP:
+				validPieceMove = isValidBishopMove(sourceRow,sourceColumn,targetRow,targetColumn);break;
+			case Piece.TYPE_KING:
+				validPieceMove = isValidKingMove(sourceRow,sourceColumn,targetRow,targetColumn);break;
+			case Piece.TYPE_KNIGHT:
+				validPieceMove = isValidKnightMove(sourceRow,sourceColumn,targetRow,targetColumn);break;
+			case Piece.TYPE_PAWN:
+				validPieceMove = isValidPawnMove(sourceRow,sourceColumn,targetRow,targetColumn);break;
+			case Piece.TYPE_QUEEN:
+				validPieceMove = isValidQueenMove(sourceRow,sourceColumn,targetRow,targetColumn);break;
+			case Piece.TYPE_ROOK:
+				validPieceMove = isValidRookMove(sourceRow,sourceColumn,targetRow,targetColumn);break;
+			default: break;
+		}
+		if( !validPieceMove){
+			return false;
+		}else{
+			// ok
+		}
+
+		
+		// handle stalemate and checkmate
+		// ..
+		
+		return true;
+	}
+       //..
+}
+[/sourcecode]
+
+Here is an example of the validation method for the piece type 'Knight'.
+
+[sourcecode language="java"]
+public class MoveValidator {
+       //..
+	private boolean isValidKnightMove(int sourceRow, int sourceColumn, int targetRow, int targetColumn) {
+		// The knight moves to any of the closest squares which are not on the same rank,
+		// file or diagonal, thus the move forms an "L"-shape two squares long and one
+		// square wide. The knight is the only piece which can leap over other pieces.
+		
+		// target location possible?
+		if( isTargetLocationFree() || isTargetLocationCaptureable()){
+			//ok
+		}else{
+			System.out.println("target location not free and not captureable");
+			return false;
+		}
+		
+		if( sourceRow+2 == targetRow && sourceColumn+1 == targetColumn){
+			// move up up right
+			return true;
+		}else if( sourceRow+1 == targetRow && sourceColumn+2 == targetColumn){
+			// move up right right
+			return true;
+		}else if( sourceRow-1 == targetRow && sourceColumn+2 == targetColumn){
+			// move down right right
+			return true;
+		}else if( sourceRow-2 == targetRow && sourceColumn+1 == targetColumn){
+			// move down down right
+			return true;
+		}else if( sourceRow-2 == targetRow && sourceColumn-1 == targetColumn){
+			// move down down left
+			return true;
+		}else if( sourceRow-1 == targetRow && sourceColumn-2 == targetColumn){
+			// move down left left
+			return true;
+		}else if( sourceRow+1 == targetRow && sourceColumn-2 == targetColumn){
+			// move up left left
+			return true;
+		}else if( sourceRow+2 == targetRow && sourceColumn-1 == targetColumn){
+			// move up up left
+			return true;
+		}else{
+			return false;
+		}
+	}
+       //..
+}
+[/sourcecode]
+
+The method chessGame.changeGameState() has been extended as well. It now checks if the end condition of the game has been reached.
+
+[sourcecode language="java"]
+public class ChessGame {
+       //..
+	/**
+	 * switches the game state depending on the current board situation.
+	 */
+	public void changeGameState() {
+
+		// check if game end condition has been reached
+		//
+		if (this.isGameEndConditionReached()) {
+
+			if (this.gameState == ChessGame.GAME_STATE_BLACK) {
+				System.out.println("Game over! Black won!");
+			} else {
+				System.out.println("Game over! White won!");
+			}
+
+			this.gameState = ChessGame.GAME_STATE_END;
+			return;
+		}
+
+		switch (this.gameState) {
+			case GAME_STATE_BLACK:
+				this.gameState = GAME_STATE_WHITE;
+				break;
+			case GAME_STATE_WHITE:
+				this.gameState = GAME_STATE_BLACK;
+				break;
+			case GAME_STATE_END:
+				// don't change anymore
+				break;
+			default:
+				throw new IllegalStateException("unknown game state:" + this.gameState);
+		}
+	}
+
+	/**
+	 * check if the games end condition is met: One color has a captured king
+	 *
+	 * @return true if the game end condition is met
+	 */
+	private boolean isGameEndConditionReached() {
+		for (Piece piece : this.pieces) {
+			if (piece.getType() == Piece.TYPE_KING && piece.isCaptured()) {
+				return true;
+			} else {
+				// continue iterating
+			}
+		}
+
+		return false;
+	}
+       //..
+}
+[/sourcecode]
+
+In addition to the changes above some changes were done to the user interface to handle the new game end condition.
+
+Resources:
+
+The source code (eclipse project): coming soon
+The chess icons come from: <a href="http://ixian.com/chess/jin-piece-sets/">http://ixian.com/chess/jin-piece-sets/</a>

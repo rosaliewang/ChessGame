@@ -1,0 +1,403 @@
+<img src="http://proghammer.files.wordpress.com/2010/09/chessgame_72.jpg" alt="chess icon 72" title="chessgame_72" width="72" height="72" class="alignleft size-full wp-image-102" /> So far we were only able to play the game locally on a single computer. In this tutorial we add some networking features so that we can play against remote players. It might be easier than you think. The programming language is again Java. Let's get started.
+<!--more-->
+<blockquote>
+This is the ninth part in a series of articles about programming a chess game in Java using Swing. As all articles build upon each other, I encourage you to also have a look at the previous articles in this series (<a href="http://proghammer.wordpress.com/2010/08/10/chess01-dragging-game-pieces/">Chess01: Dragging game pieces</a>, <a href="http://proghammer.wordpress.com/2010/08/16/chess02-introducing-game-state/">Chess02: Introducing game state</a>, <a href="http://proghammer.wordpress.com/2010/09/10/chess03-separating-game-logic-from-user-interface-logic/">Chess03: Separating view and logic</a>, <a href="http://proghammer.wordpress.com/2010/09/16/chess04-implementing-an-alternative-user-interface/">Chess04: Implementing an alternative user interface</a>, <a href="http://proghammer.wordpress.com/2010/09/22/chess05-enforcing-game-rules/">Chess05: Enforcing game rules</a>, <a href="http://proghammer.wordpress.com/2010/10/12/chess06-highlighting-valid-target-locations/">Chess06: Highlighting valid target locations</a>, <a href="http://proghammer.wordpress.com/2010/11/25/chess07-new-game-flow-handling/">Chess07: New game flow handling and AI preparation</a>, <a href="https://proghammer.wordpress.com/2010/11/30/chess08-implementing-an-ai-artificial-intelligence-player/">Chess08: Implementing an AI (artificial intelligence) player</a>).
+</blockquote>
+
+In this tutorial we will create yet another implementation of the IPlayerHandler interface. As a reminder, the IPlayerHandler interface defines the protocol that a class has to implement if it wants to be a valid game client. It only defines two methods (getMove(), moveSuccessfullyExecuted(Move move)), so it's quite straight forward.
+
+[sourcecode language="java"]
+/**
+ * This interface has to be implemented by all classes that want to
+ * act as a player. Instances of this interface will be registered
+ * in the logic class "ChessGame" using the method:
+ * setPlayer(int pieceColor, IPlayerHandler playerHandler)
+ *
+ */
+public interface IPlayerHandler {
+
+	/**
+	 * The logic class "ChessGame" calls this method on the currently
+	 * active IPlayerHandler instance to receive the next move. If the
+	 * new move is not available yet (e.g. the AI did not finish
+	 * calculating the next move), the method
+	 * can either block the call or return null. If null is returned, the
+	 * game logic will call this method again after waiting a litte.
+	 * 
+	 * @return the next move or null, if the next move is not yet available
+	 */
+	public Move getMove();
+
+	/**
+	 * The logic class "ChessGame" calls this method on all registered
+	 * IPlayerHandlers to inform them about the successful execution of
+	 * the provided move.
+	 * @param move - the last successfully executed move
+	 */
+	public void moveSuccessfullyExecuted(Move move);
+
+}
+[/sourcecode]
+
+There are always two player handlers in our application: One for the white (starting) player and one for the black player. You can assign any IPlayerHandler to any player. In previous tutorials we implemented a Swing based IPlayerHandler, a command line based IPlayerHandler and a computer driven IPlayerHandler using artificial intelligence (AI).
+
+To allow our chess application to be played over a network we first need to decide whether we would like to implement peer-to-peer communication (one client talking straight to another client) or use a central server for communication. For this tutorial I decided to go with a central server. The server does nothing else than store messages and provide them back on request.
+
+We also need to define a protocol that we want to use for communication. For this tutorial I decided to go with an <a href="http://www.xmlrpc.com/spec">XML-RPC</a> based protocol with the following methods:
+
+[sourcecode language="java"]
+/**
+ * Creates a new channel on the server. Channels are automatically deleted after 2 days.
+ * @param password - password for sending messages to this channel
+ * @return a unique channel identifier the new channel
+ */
+public String createChannel(password);
+
+/**
+ * Varify if the channel_id exists and if the password is valid for this channel.
+ * @param channelId - channel identifier for validation
+ * @param password - channel password for validation
+ * @return true if specified channel exists and password is valid, else false
+ */
+public boolean isValid(channelId, password);
+
+/**
+ * Receive last message from the specified channel. Note, that reading is public (no
+ * password required).
+ * @param channelId - channel identifier
+ * @return message text
+ */
+public String getLastMessage(channelId);
+
+/**
+ * Send the specified message to the given channel.
+ * @param channelId - channel identifier
+ * @param password - channel password
+ * @param message - message text
+ * @return message identifier
+ */
+public String sendMessage(channelId, password, messageText);
+
+[/sourcecode]
+
+The protocol is very basic. It allows the creation of new password-protected channels, is able to store messages in these channels and provide these messages back on request.
+Now that we have the protocol, let's have a look at how this can be used in our application.
+
+Here is what should happen.
+
+<img src="http://proghammer.files.wordpress.com/2011/07/ch09_sequence1.png"/>
+
+First the application needs to create a new channel on the server, by sending a createChannel request. Then the game logic takes over. Let's assume that the white player is a user interface and the black player is the new network player. The game logic asks the white-player-handler for a move and once a move has been received, it processes the move and sends a confirmation to the white- and black-player. The confirmation to the white-player will update the user interface and the black-player will send the move to the server.
+
+<img src="http://proghammer.files.wordpress.com/2011/07/ch09_sequence2.png"/>
+
+The second application first joins the previously created channel/game on the server, by simply validating the game's ID and password. Then the game logic takes over. In our example the white player is now the new network player and the black-player is the user interface. The game logic asks the white-player (our network player) for a move. The network player will request the last move from the server and provide it back to the game logic in case the message has not been received already. The game logic applies the move and sends a confirmation to the white-player and black-player. The white player will not send the message back to the server, as it checks whether the move provided by the game logic is the one we just received from the network. The black player updates the user interface.
+
+Now that the communication flow has been defined, we can start the implementation. First let's do a rough layout of the new IPlayerHandler implementation called XmlRpcPlayerHandler.
+
+[sourcecode language="java"]
+public class XmlRpcPlayerHandler implements IPlayerHandler{
+       ..
+	/**
+	 * create new network game or join existing one.
+	 * @param aGameIdOnServer - game id to join. If null then a new game is created
+	 * @param aGamePassword - password for joining the online game or password for
+	 *                        the new game to be created
+	 */
+	public XmlRpcPlayerHandler(String aGameIdOnServer, String aGamePassword) {
+		// set up connection to server
+
+		// create new game or join existing
+	}
+
+	@Override
+	public Move getMove() {
+		// ask server if there are new messages
+
+		// if we receive the move that we have just sent, we do not want
+		// to return it to the game logic.
+
+		// if it is a new move, remember it and return it to the game logic
+	}
+
+	@Override
+	public void moveSuccessfullyExecuted(Move move) {
+	       // if the move is not the one we previously received from the network,
+	       // send it to the server
+	}
+
+	/**
+	 * get the last move that is available on the server
+	 *
+	 * @param aGameIdOnServer - server game id
+	 * @param aGamePassword - password for online game
+	 * @return the last move as string
+	 */
+	private String getLastMove(String aGameIdOnServer, String aGamePassword) {
+		//get last message from server
+	}
+
+	/**
+	 * Send the move message to the server.
+	 * @param aGameIdOnServer - server game id
+	 * @param aGamePassword - password for online game
+	 * @param message - the move as a string to be sent
+	 * @return id that the server assigned to the new move message
+	 */
+	private String sendMove(String aGameIdOnServer, String aGamePassword, String message) {
+		// send message to server
+	}
+
+	/**
+	 * checks the validity of the provided game id and password
+	 * @param aGameIdOnServer - server game id
+	 * @param aGamePassword - game password
+	 * @return true if parameters are valid
+	 */
+	private boolean isGameValid(String aGameIdOnServer, String aGamePassword) {
+		// validate channelId and password
+	}
+
+	/**
+	 * Create a new game with the specified password
+	 * @param aGamePassword - password for the new game
+	 * @return the game id that the game server assigned to the new game
+	 */
+	private String createGame(String aGamePassword) {
+		// create a new channel on the server
+	}
+	..
+}
+[/sourcecode]
+
+For calling the XML-RPC services, I use the XML-RPC library from the <a href="http://ws.apache.org/xmlrpc/">"Apache project</a>. All required libraries are included with the source code at the end of the article.
+
+The constructor takes a gameId and a password, if the gameId is empty, it creates a new channel on the server and stores the channelId for later usage.
+
+[sourcecode language="java"]
+
+public class XmlRpcPlayerHandler implements IPlayerHandler{
+       ..
+       /** equivalent to channelId. */
+	private String gameIdOnServer;
+	/** password for the channel on the server. */
+	private String gamePassword = null;
+	/** last received message string from server */
+	private String lastMoveStrReceivedFromNetwork = "###";
+	/** last message sent to server */
+	private String lastMoveStrSentToNetwork = "###";
+	/** connection to server */
+	private XmlRpcClient xmlRpcClient;
+	/** URL of the XML-RPC services */
+	private static final String XML_RPC_HOST_URL = "http://gmmsgs.appspot.com/xml";
+       ..
+	/**
+	 * create new network game or join existing one.
+	 * @param aGameIdOnServer - game id to join. If null then a new game is created
+	 * @param aGamePassword - password for joining the online game or password for
+	 *                        the new game to be created
+	 */
+	public XmlRpcPlayerHandler(String aGameIdOnServer, String aGamePassword) {
+		// set up connection to server
+		//
+		try{
+			XmlRpcClientConfigImpl config = new XmlRpcClientConfigImpl();
+			config.setServerURL(new URL(XML_RPC_HOST_URL));
+			xmlRpcClient = new XmlRpcClient();
+			xmlRpcClient.setTransportFactory(new XmlRpcCommonsTransportFactory(xmlRpcClient));
+			xmlRpcClient.setConfig(config);
+		} catch(MalformedURLException mue) {
+			throw new IllegalStateException("Invalid XML-RPC-Server URL:" + XML_RPC_HOST_URL);
+		}
+
+		// do we need to create a new game or join existing?
+		//
+		if (aGameIdOnServer == null) {
+			// create new game
+			System.out.println("Creating new game");
+			this.gameIdOnServer = createGame(aGamePassword);
+			this.gamePassword = aGamePassword;
+			Main.ask("New game id on server is:" + gameIdOnServer
+					+ " (hit enter to continue)");
+		} else {
+			System.out.println("Joining game:" + aGameIdOnServer);
+			// verify received parameters
+			if (isGameValid(aGameIdOnServer, aGamePassword)) {
+				this.gameIdOnServer = aGameIdOnServer;
+				this.gamePassword = aGamePassword;
+			} else {
+				throw new IllegalStateException("GameId: " + aGameIdOnServer
+						+ " and/or password: >" + aGamePassword+"< are invalid");
+			}
+		}
+	}
+       ..
+}
+[/sourcecode]
+
+The getMove() and moveSuccessfullyExecuted() methods are implemented like this:
+
+[sourcecode language="java"]
+
+public class XmlRpcPlayerHandler implements IPlayerHandler{
+       ..
+	@Override
+	public Move getMove() {
+		Move receivedMove = null;
+		String lastMoveFromServerStr = null;
+
+		// loop until we receive a new move.
+		//
+		// We could also just return null when we receive no move
+		// or receive the one we sent, but as the game logic
+		// would ask again in 100 ms, I decided to block
+		// the call and implement a waiting time of 3000 ms.
+		// This greatly reduces network traffic, while still
+		// not slowing down the game too much.
+		while(receivedMove == null) {
+			// ask server if there are new messages
+			lastMoveFromServerStr = getLastMove(this.gameIdOnServer, this.gamePassword);
+	
+			// if no messages returned, return null
+			if (lastMoveFromServerStr == null || lastMoveFromServerStr.trim().length() == 0) {
+				System.out.println("No moves received");
+			}
+			// if we receive the move that we have just sent, we do not want
+			// to return it to the game logic.
+			//
+			else if (lastMoveStrSentToNetwork != null
+					&& lastMoveStrSentToNetwork.equals(lastMoveFromServerStr)) {
+				System.out.println("Received move is the one we sent");
+			}
+			else {
+				receivedMove = MoveUtils.convertStringToMove(lastMoveFromServerStr);
+			}
+			try {Thread.sleep(3000);} catch (InterruptedException e) {e.printStackTrace();}
+		}
+
+		// set last received move
+		this.lastMoveStrReceivedFromNetwork = lastMoveFromServerStr;
+		return receivedMove;
+	}
+
+	@Override
+	public void moveSuccessfullyExecuted(Move move) {
+		System.out.println("moveSuccessfullyExecuted");
+		String moveStr = MoveUtils.convertMoveToString(move);
+		if (!moveStr.equals(lastMoveStrReceivedFromNetwork)) {
+			// send our move to server
+			sendMove(this.gameIdOnServer, this.gamePassword, moveStr);
+			lastMoveStrSentToNetwork = moveStr;
+		} else {
+			// the executed move is the one we have received from
+			// the network, so no need to send it again to the server
+		}
+	}
+	..
+}
+[/sourcecode]
+
+To finish this class we implement the wrapper methods for the network calls. To execute a procedure on the server, we first have to build an Object array containing the parameters that we would like to pass to the remote procedure. Then we call xmlRpcClient.execute() with the method name and parameters. The connection to the server is setup in the constructor of the XmlRpcPlayerHandler (see above).
+
+[sourcecode language="java"]
+
+public class XmlRpcPlayerHandler implements IPlayerHandler{
+       ..
+	/**
+	 * get the last move that is available on the server
+	 *
+	 * @param aGameIdOnServer - server game id
+	 * @param aGamePassword - password for online game
+	 * @return the last move as string
+	 */
+	private String getLastMove(String aGameIdOnServer, String aGamePassword) {
+		System.out.println("get last move from server");
+	    Object[] params = new Object[]{aGameIdOnServer};
+	    String message = null;
+	    try {
+	    	message = (String) xmlRpcClient.execute("getLastMessage", params);
+	    	// instead of returning an empty string we return null
+	    	if (message != null && message.trim().length() == 0) {
+	    		message = null;
+	    	}
+		} catch (XmlRpcException e) {
+			throw new IllegalStateException(e);
+		}
+		return message;
+	}
+
+	/**
+	 * Send the move message to the server.
+	 * @param aGameIdOnServer - server game id
+	 * @param aGamePassword - password for online game
+	 * @param message - the move as a string to be sent
+	 * @return id that the server assigned to the new move message
+	 */
+	private String sendMove(String aGameIdOnServer, String aGamePassword, String message) {
+		System.out.println("sending move:" + message);
+	    Object[] params = new Object[]{aGameIdOnServer, aGamePassword, message};
+	    String result = null;
+	    try {
+			result = (String) xmlRpcClient.execute("sendMessage", params);
+		} catch (XmlRpcException e) {
+			throw new IllegalStateException(e);
+		}
+		return result;
+	}
+
+	/**
+	 * checks the validity of the provided game id and password
+	 * @param aGameIdOnServer - server game id
+	 * @param aGamePassword - game password
+	 * @return true if parameters are valid
+	 */
+	private boolean isGameValid(String aGameIdOnServer, String aGamePassword) {
+		System.out.println("sending validation request for game and password");
+	    Object[] params = new Object[]{aGameIdOnServer, aGamePassword};
+	    String result = null;
+	    try {
+			result = (String) xmlRpcClient.execute("isValid", params);
+		} catch (XmlRpcException e) {
+			throw new IllegalStateException(e);
+		}
+		return Boolean.parseBoolean(result);
+	}
+
+	/**
+	 * Create a new game with the specified password
+	 * @param aGamePassword - password for the new game
+	 * @return the game id that the game server assigned to the new game
+	 */
+	private String createGame(String aGamePassword) {
+		System.out.println("sending createChannel request");
+	    Object[] params = new Object[]{aGamePassword};
+	    String result = null;
+	    try {
+			result = (String) xmlRpcClient.execute("createChannel", params);
+		} catch (XmlRpcException e) {
+			throw new IllegalStateException(e);
+		}
+		return result;
+	}
+       ..
+}
+[/sourcecode]
+
+As you might have noticed, the server is completely passive in the sense that it does not connect or push messages to the clients. The server only replies to requests sent by the clients. You also might have noticed, that the XML-RPC services are hosted publicly on the <a href="http://code.google.com/appengine/">Google App Engine</a> server. This means you do not need to implement the server part yourself. Just leave the XML_RPC_HOST_URL as it is and the application works fine.
+The services are written in python and if you are interested in the source code, just leave a comment below the article. The implementation of the services is pretty straight forward and consists only of 70 lines of code.
+
+As always, there is a lot more that could be covered, especially when it comes to security. For me, chess has proven to be a good start for implementing network functionality. Networking and security become a lot more difficult once you start implementing games with hidden information or dice rolling.
+
+So, there you have it. A network enabled chess application with two different user interfaces and AI.
+
+Happy coding!
+
+PS: I changed the Main application class slightly to allow the user to choose between the various IPlayerHandler implementations during startup. If you are interested how it was done, have a look at the ch09.Main class.
+
+Resources:
+
+The source code (eclipse project): coming soon
+The chess icons come from: <a href="http://ixian.com/chess/jin-piece-sets/">http://ixian.com/chess/jin-piece-sets/</a>
+<a href="http://www.xmlrpc.com/spec">XML-RPC Specification</a>
+<a href="http://ws.apache.org/xmlrpc/">Java XML-RPC library from Apache</a>
+<a href="http://code.google.com/appengine/">Google App Engine</a>

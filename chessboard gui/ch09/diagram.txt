@@ -1,0 +1,19 @@
+
+ChessGame->SwingPlayerHandler: getMove()
+SwingPlayerHandler-->ChessGame: move
+ChessGame->SwingPlayerHandler: moveSuccessfullyExecuted(move)
+ChessGame->XmlRpcPlayerHandler: moveSuccessfullyExecuted(move)
+XmlRpcPlayerHandler->Server: sendMessage(move)
+
+
+participant ChessGame
+participant XmlRpcPlayerHandler
+participant SwingPlayerHandler
+participant Server
+
+ChessGame->XmlRpcPlayerHandler: getMove()
+XmlRpcPlayerHandler->Server: getLastMessage()
+Server-->XmlRpcPlayerHandler: move
+XmlRpcPlayerHandler-->ChessGame: move
+ChessGame->SwingPlayerHandler: moveSuccessfullyExecuted(move)
+ChessGame->XmlRpcPlayerHandler: moveSuccessfullyExecuted(move)
