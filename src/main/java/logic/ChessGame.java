@@ -45,7 +45,7 @@ public class ChessGame implements Runnable {
      * @param pieceColor - the color the client/player controls
      * @param playerHandler - the player/client
      */
-    public void setPlayer(int pieceColor, PlayerHandler playerHandler){
+    public void setPlayer(int pieceColor, PlayerHandler playerHandler) {
         switch (pieceColor) {
             case Piece.COLOR_BLACK: this.blackPlayerHandler = playerHandler; break;
             case Piece.COLOR_WHITE: this.whitePlayerHandler = playerHandler; break;
@@ -88,6 +88,7 @@ public class ChessGame implements Runnable {
         }
 
         System.out.println(Thread.currentThread() + " ChessGame: game ended");
+        isRunning = false;
     }
 
     /**
@@ -104,40 +105,43 @@ public class ChessGame implements Runnable {
 
         this.changeGameState();
 
-        // TODO
-        setThreateningPieces(chessRule.isKingInCheck());
+        if (!isGameEndState()) {
+            System.out.println("swap player: game end state here");
+            // TODO
+            setThreateningPieces(chessRule.isKingInCheck());
 
-        // check if king is in check
-        if (threateningPieces != null) {
+            // check if king is in check
+            if (threateningPieces != null) {
 //            System.out.println(Thread.currentThread() + " 6.ChessGame.swapActivePlayer(): threatening pieces "
 //                    + threateningPieces.size());
-            if (getGameState() == GAME_STATE_WHITE) {
-                this.isWhiteKingInCheck = true;
-                this.isBlackKingInCheck = false;
-            } else {
-                this.isBlackKingInCheck = true;
-                this.isWhiteKingInCheck = false;
-            }
+                if (getGameState() == GAME_STATE_WHITE) {
+                    this.isWhiteKingInCheck = true;
+                    this.isBlackKingInCheck = false;
+                } else {
+                    this.isBlackKingInCheck = true;
+                    this.isWhiteKingInCheck = false;
+                }
 
-            // compute checkmate status after swap player
-            if (this.chessRule.isCheckmate()) {
-                this.checkmate = true;
-                this.gameState = getGameState() == GAME_STATE_WHITE ?
-                        GAME_STATE_END_BLACK_WON : GAME_STATE_END_WHITE_WON;
-            } else this.checkmate = false;
-        } else {
+                // compute checkmate status after swap player
+                if (this.chessRule.isCheckmate()) {
+                    this.checkmate = true;
+                    this.gameState = getGameState() == GAME_STATE_WHITE ?
+                            GAME_STATE_END_BLACK_WON : GAME_STATE_END_WHITE_WON;
+                } else this.checkmate = false;
+            } else {
 //            System.out.println(Thread.currentThread() + " 6.ChessGame.swapActivePlayer(): threatening pieces null");
 
-            this.isBlackKingInCheck = false;
-            this.isWhiteKingInCheck = false;
+                this.isBlackKingInCheck = false;
+                this.isWhiteKingInCheck = false;
 
-            if (this.chessRule.isStalemate()) {
-                this.stalemate = true;
-                this.gameState = GAME_STATE_END_DRAW;
-            } else this.stalemate = false;
+                if (this.chessRule.isStalemate()) {
+                    this.stalemate = true;
+                    this.gameState = GAME_STATE_END_DRAW;
+                } else this.stalemate = false;
+            }
+
+            this.activePlayerHandler.moveSuccessfullyExecuted(null); // repaint
         }
-
-        this.activePlayerHandler.moveSuccessfullyExecuted(null); // repaint
     }
 
     /**
@@ -215,18 +219,18 @@ public class ChessGame implements Runnable {
         addPiece(Piece.COLOR_WHITE, Piece.TYPE_BISHOP, Piece.ROW_1, Piece.COLUMN_C);
         addPiece(Piece.COLOR_WHITE, Piece.TYPE_QUEEN, Piece.ROW_1, Piece.COLUMN_D);
         addPiece(Piece.COLOR_WHITE, Piece.TYPE_KING, Piece.ROW_1, Piece.COLUMN_E);
-        addPiece(Piece.COLOR_WHITE, Piece.TYPE_BISHOP, Piece.ROW_1, Piece.COLUMN_F);
-        addPiece(Piece.COLOR_WHITE, Piece.TYPE_KNIGHT, Piece.ROW_1, Piece.COLUMN_G);
+//        addPiece(Piece.COLOR_WHITE, Piece.TYPE_BISHOP, Piece.ROW_1, Piece.COLUMN_F);
+//        addPiece(Piece.COLOR_WHITE, Piece.TYPE_KNIGHT, Piece.ROW_1, Piece.COLUMN_G);
         addPiece(Piece.COLOR_WHITE, Piece.TYPE_ROOK, Piece.ROW_1, Piece.COLUMN_H);
 
         //pawns
-        int currentColumn = Piece.COLUMN_A;
-        for (int i = 0; i < 8; i++) {
-            addPiece(Piece.COLOR_WHITE, Piece.TYPE_PAWN, Piece.ROW_2, currentColumn);
-            currentColumn++;
-        }
+//        int currentColumn = Piece.COLUMN_A;
+//        for (int i = 0; i < 8; i++) {
+//            addPiece(Piece.COLOR_WHITE, Piece.TYPE_PAWN, Piece.ROW_2, currentColumn);
+//            currentColumn++;
+//        }
 
-        addPiece(Piece.COLOR_WHITE, Piece.TYPE_PAWN, Piece.ROW_7, Piece.COLUMN_A);
+        addPiece(Piece.COLOR_WHITE, Piece.TYPE_PAWN, Piece.ROW_7, Piece.COLUMN_D);
 
 //        addPiece(Piece.COLOR_BLACK, Piece.TYPE_ROOK, Piece.ROW_8, Piece.COLUMN_A);
         addPiece(Piece.COLOR_BLACK, Piece.TYPE_KNIGHT, Piece.ROW_8, Piece.COLUMN_B);
@@ -238,11 +242,11 @@ public class ChessGame implements Runnable {
         addPiece(Piece.COLOR_BLACK, Piece.TYPE_ROOK, Piece.ROW_8, Piece.COLUMN_H);
 
         //pawns
-        currentColumn = Piece.COLUMN_A;
-        for (int i = 0; i < 8; i++) {
-            addPiece(Piece.COLOR_BLACK, Piece.TYPE_PAWN, Piece.ROW_7, currentColumn);
-            currentColumn++;
-        }
+//        currentColumn = Piece.COLUMN_A;
+//        for (int i = 0; i < 8; i++) {
+//            addPiece(Piece.COLOR_BLACK, Piece.TYPE_PAWN, Piece.ROW_7, currentColumn);
+//            currentColumn++;
+//        }
 
         /**
          * for debug: check game state
@@ -272,7 +276,7 @@ public class ChessGame implements Runnable {
      * @param row   offset of x
      * @param column offset of y
      */
-    private void addPiece(int color, int type, int row, int column) {
+    public void addPiece(int color, int type, int row, int column) {
         Piece piece = new Piece(color, type, row, column);
         synchronized (lock) {
             this.pieces.add(piece);
@@ -289,6 +293,9 @@ public class ChessGame implements Runnable {
      * @return true, if piece was moved successfully
      */
     public boolean movePiece(Move move) {
+        //set captured piece in move
+        // this information is needed in the undoMove() method.
+        move.capturedPiece = this.getNonCapturedPieceAtLocation(move.targetRow, move.targetColumn);
 //        System.out.println(pieces);
         Piece piece = getNonCapturedPieceAtLocation(move.sourceRow, move.sourceColumn);
 
@@ -296,6 +303,7 @@ public class ChessGame implements Runnable {
         assert piece != null;
         int opponentColor = (piece.getColor() == Piece.COLOR_BLACK ?
                 Piece.COLOR_WHITE : Piece.COLOR_BLACK);
+        // capture
         if (hasNonCapturedPieceAtLocation(opponentColor, move.targetRow, move.targetColumn)) {
             Piece opponentPiece = getNonCapturedPieceAtLocation(move.targetRow, move.targetColumn);
             this.pieces.remove(opponentPiece);
@@ -303,12 +311,19 @@ public class ChessGame implements Runnable {
             opponentPiece.setIsCaptured(true); // for guiPiece
         }
 
-        if (piece.isCaptureEnPassant()) {
-            move.targetRow += piece.getColor() == Piece.COLOR_BLACK ? -1 : 1;
-            piece.setCaptureEnPassant(false);
-        } else if (piece.isCastling()) {
-            piece.setCastling(false);
+        if (move.enPassant) {
+            move.enPassantPosition(piece.getColor() == Piece.COLOR_BLACK ? -1 : 1);
+//            move.targetRow += piece.getColor() == Piece.COLOR_BLACK ? -1 : 1;
+//            piece.setPerformedEnPassant(false);
         }
+//        else if (move.pawnPromotion) {
+//            move.pawnPromotion(piece);
+//        }
+
+        // castling is done in ChessRule
+//        else if (piece.isCastling()) {
+//            piece.setCastling(false);
+//        }
 
         piece.setRow(move.targetRow);
         piece.setColumn(move.targetColumn);
@@ -329,6 +344,15 @@ public class ChessGame implements Runnable {
         }
 
         return isStalemate() || isCheckmate();
+    }
+
+    /**
+     * used after first calling of changeGameState() in swapActivePlayer()
+     */
+    private boolean isGameEndState() {
+        return this.gameState == ChessGame.GAME_STATE_END_DRAW ||
+                this.gameState == ChessGame.GAME_STATE_END_BLACK_WON ||
+                this.gameState == ChessGame.GAME_STATE_END_WHITE_WON;
     }
 
     public void addToHistoryMove(Move move) {
@@ -385,10 +409,60 @@ public class ChessGame implements Runnable {
     }
 
     /**
+     * Undo the specified move. It will also adjust the game state appropriately.
+     */
+    public void undoMove(Move move) {
+        Piece piece = getNonCapturedPieceAtLocation(move.targetRow, move.targetColumn);
+
+        piece.setRow(move.sourceRow);
+        piece.setColumn(move.sourceColumn);
+
+        // capture[All], en passant[Pawn]
+        if (move.capturedPiece != null) {
+            move.capturedPiece.setRow(move.targetRow);
+            move.capturedPiece.setColumn(move.targetColumn);
+            move.capturedPiece.setIsCaptured(false);
+            this.capturedPieces.remove(move.capturedPiece);
+            this.pieces.add(move.capturedPiece);
+//            piece.setPerformedEnPassant(false);
+        } else if (move.rookCastlingMove != null) { // castling[King]
+            Move castlingMove = move.rookCastlingMove;
+//            piece.setCastlingMove(null);
+//            piece.setRookForCastling(null);
+            piece.setHasNotMoved(true);
+            getNonCapturedPieceAtLocation(castlingMove.targetRow, castlingMove.targetColumn).
+                    setHasNotMoved(true);
+
+            undoMove(castlingMove);
+        } else if (piece.isLastMovedTwoSteps()) { // first move[Pawn]
+            piece.setLastMovedTwoSteps(false);
+        }
+
+        // pawn promotion
+        if (move.pawnPromotion) {
+            move.undoPromotion(piece);
+        }
+
+        if (piece.getColor() == Piece.COLOR_BLACK) {
+            this.gameState = ChessGame.GAME_STATE_BLACK;
+        } else {
+            this.gameState = ChessGame.GAME_STATE_WHITE;
+        }
+    }
+
+    /**
      * @return current game state
      */
     public int getGameState() {
         return gameState;
+    }
+
+    /**
+     * for debug
+     * @param gameState set to gameState
+     */
+    public void setGameState(int gameState) {
+        this.gameState = gameState;
     }
 
     public List<Piece> getThreateningPieces() {
@@ -451,11 +525,14 @@ public class ChessGame implements Runnable {
     /**
      * switches between the different game states
      */
-    private void changeGameState() {
+    public void changeGameState() {
         // check if game end condition has been reached
         //
         if (this.isGameEndConditionReached()) {
-            if (this.gameState == ChessGame.GAME_STATE_BLACK) {
+            System.out.println("game end reached");
+            if (isStalemate()) {
+                this.gameState = ChessGame.GAME_STATE_END_DRAW;
+            } else if (this.gameState == ChessGame.GAME_STATE_BLACK) {
                 this.gameState = ChessGame.GAME_STATE_END_BLACK_WON;
             } else if (this.gameState == ChessGame.GAME_STATE_WHITE) {
                 this.gameState = ChessGame.GAME_STATE_END_WHITE_WON;

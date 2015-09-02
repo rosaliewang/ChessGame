@@ -219,7 +219,7 @@ public class ChessBoardGUI extends JPanel implements PlayerHandler {
                     Piece targetPiece = chessGame.getNonCapturedPieceAtLocation(row, column);
 
                     // check if target location is valid
-                    if (moveValidator.isValidPieceMovementRules(sourcePiece, targetPiece,
+                    if (moveValidator.isValidPieceMovementRules(null, sourcePiece, targetPiece,
                             row, column, true, true)) {
                         int highlightX = convertColumnToX(column);
                         int highlightY = convertRowToY(row);
@@ -306,17 +306,26 @@ public class ChessBoardGUI extends JPanel implements PlayerHandler {
             this.currentMove = move;
 
             // if Pawn promotion, change Pawn image
-            if (dragPiece.getPiece().hasPromotion()) {
+            if (move.pawnPromotion) {
+//                System.out.println("pawn promotion in chessBoardGUI");
                 Piece piece = dragPiece.getPiece();
+//                piece.setRow(move.targetRow);
+//                piece.setColumn(move.targetColumn);
+//                System.out.println(piece.toString());
                 Image img = this.getPieceImage(piece.getColor(), piece.getType());
                 dragPiece.setImage(img);
+//                dragPiece.correctPiecePosition();
                 // if castling, also modify related Rook's guiPiece
-            } else if (dragPiece.getPiece().getRookForCastling() != null) {
-                Piece piece = dragPiece.getPiece().getRookForCastling();
+            } else if (move.rookCastlingMove != null) {
+                Move castlingMove = move.rookCastlingMove;
+                Piece piece = chessGame.getNonCapturedPieceAtLocation(
+                        castlingMove.sourceRow, castlingMove.sourceColumn);
+                piece.setRow(castlingMove.targetRow);
+                piece.setColumn(castlingMove.targetColumn);
                 for (GUIPiece guiPiece : this.guiPieces) {
                     if (guiPiece.getPiece() == piece) {
                         guiPiece.correctPiecePosition(); // need to correct in order to draw
-                        dragPiece.getPiece().setRookForCastling(null);
+//                        dragPiece.getPiece().setRookForCastling(null);
                         break;
                     }
                 }

@@ -1,8 +1,5 @@
 package logic;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-
 /**
  * Created by Yuchen Wang on 8/13/15.
  */
@@ -11,11 +8,12 @@ public class Piece {
     private int type;
     private boolean hasNotMoved; // King & Rook: first move could choose castling
     private boolean lastMovedTwoSteps; // Pawn: moved two steps in last turn
-    private boolean captureEnPassant; // Pawn: just performed captureEnPassant
-    private boolean hasPromotion; // for Pawn reached last rank
-    private boolean castling; // King
+//    private boolean performedEnPassant; // Pawn: just performed performedEnPassant
+//    private boolean hasPromotion; // for Pawn reached last rank
+//    private boolean castling; // King
 
-    private Piece rookForCastling; // King: rook to castling
+//    private Piece rookForCastling; // King: rook to castling
+//    private Move castlingMove; // rook move
 
     public static final int COLOR_WHITE = 0;
     public static final int COLOR_BLACK = 1;
@@ -58,10 +56,10 @@ public class Piece {
         this.type = type;
         this.color = color;
         this.hasNotMoved = true;
-        this.lastMovedTwoSteps = false; // for Pawn
-        this.captureEnPassant = false; // for Pawn
-        this.hasPromotion = false; // for Pawn
-        this.rookForCastling = null;
+//        this.lastMovedTwoSteps = false; // for Pawn
+//        this.performedEnPassant = false; // for Pawn
+//        this.hasPromotion = false; // for Pawn
+//        this.rookForCastling = null;
     }
 
     public int getColumn() {
@@ -96,13 +94,13 @@ public class Piece {
         return lastMovedTwoSteps;
     }
 
-    public boolean hasPromotion() {
-        return hasPromotion;
-    }
+//    public boolean hasPromotion() {
+//        return hasPromotion;
+//    }
 
-    public boolean isCastling() {
-        return castling;
-    }
+//    public boolean isCastling() {
+//        return castling;
+//    }
 
     @Override
     public String toString() {
@@ -132,9 +130,9 @@ public class Piece {
         return color == COLOR_BLACK ? "black" : "white";
     }
 
-    public boolean isCaptureEnPassant() {
-        return captureEnPassant;
-    }
+//    public boolean isPerformedEnPassant() {
+//        return performedEnPassant;
+//    }
 
     public static String getTypeInColor(int color, int type) {
         String strType = "unknown";
@@ -204,13 +202,13 @@ public class Piece {
         return strColumn;
     }
 
-    public Piece getRookForCastling() {
-        return rookForCastling;
-    }
+//    public Piece getRookForCastling() {
+//        return rookForCastling;
+//    }
 
-    public void setRookForCastling(Piece rookForCastling) {
-        this.rookForCastling = rookForCastling;
-    }
+//    public void setRookForCastling(Piece rookForCastling) {
+//        this.rookForCastling = rookForCastling;
+//    }
 
     public void setHasNotMoved(boolean hasNotMoved) {
         this.hasNotMoved = hasNotMoved;
@@ -224,60 +222,70 @@ public class Piece {
         this.type = type;
     }
 
-    public void setCaptureEnPassant(boolean captureEnPassant) {
-        this.captureEnPassant = captureEnPassant;
-    }
+//    public void setPerformedEnPassant(boolean performedEnPassant) {
+//        this.performedEnPassant = performedEnPassant;
+//    }
 
-    public void setCastling(boolean castling) {
-        this.castling = castling;
-    }
+//    public void setCastling(boolean castling) {
+//        this.castling = castling;
+//    }
+
+//    /**
+//     * for Pawn promotion
+//     */
+//    public void pawnPromotion() {
+//        String input;
+//        BufferedReader inputReader = new BufferedReader(new InputStreamReader(System.in));
+//
+//        while (true) {
+//            // print game state and ask for user input
+//            //
+//            System.out.println("pawn promotion to one of the following");
+//            System.out.println("Queen/q, Bishop/b, Knight/n, Rook/r: ");
+//
+//            try {
+//                // read user input
+//                input = inputReader.readLine();
+//
+//                // exit, if user types 'exit'
+//                if (input.equalsIgnoreCase("queen") ||
+//                        input.equalsIgnoreCase("q")) {
+//                    setType(TYPE_QUEEN);
+//                    hasPromotion = true;
+//                    return;
+//                } else if (input.equalsIgnoreCase("bishop") ||
+//                        input.equalsIgnoreCase("b")) {
+//                    hasPromotion = true;
+//                    setType(TYPE_BISHOP);
+//                    return;
+//                } else if (input.equalsIgnoreCase("knight") ||
+//                        input.equalsIgnoreCase("n")) {
+//                    hasPromotion = true;
+//                    setType(TYPE_KNIGHT);
+//                    return;
+//                } else if (input.equalsIgnoreCase("rook") ||
+//                        input.equalsIgnoreCase("r")) {
+//                    hasPromotion = true;
+//                    setType(TYPE_ROOK);
+//                    return;
+//                } else {
+//                    System.out.println("invalid input, retry");
+//                }
+//            } catch (Exception e) {
+//                System.out.println(e.getClass() + ": " + e.getMessage());
+//            }
+//        }
+//    }
 
     /**
-     * for Pawn promotion
+     * undo pawn promotion
      */
-    public void pawnPromotion() {
-        String input;
-        BufferedReader inputReader = new BufferedReader(new InputStreamReader(System.in));
-
-        while (true) {
-            // print game state and ask for user input
-            //
-            System.out.println("pawn promotion to one of the following");
-            System.out.println("Queen/q, Bishop/b, Knight/n, Rook/r: ");
-
-            try {
-                // read user input
-                input = inputReader.readLine();
-
-                // exit, if user types 'exit'
-                if (input.equalsIgnoreCase("queen") ||
-                        input.equalsIgnoreCase("q")) {
-                    setType(TYPE_QUEEN);
-                    hasPromotion = true;
-                    return;
-                } else if (input.equalsIgnoreCase("bishop") ||
-                        input.equalsIgnoreCase("b")) {
-                    hasPromotion = true;
-                    setType(TYPE_BISHOP);
-                    return;
-                } else if (input.equalsIgnoreCase("knight") ||
-                        input.equalsIgnoreCase("n")) {
-                    hasPromotion = true;
-                    setType(TYPE_KNIGHT);
-                    return;
-                } else if (input.equalsIgnoreCase("rook") ||
-                        input.equalsIgnoreCase("r")) {
-                    hasPromotion = true;
-                    setType(TYPE_ROOK);
-                    return;
-                } else {
-                    System.out.println("invalid input, retry");
-                }
-            } catch (Exception e) {
-                System.out.println(e.getClass() + ": " + e.getMessage());
-            }
-        }
-    }
+//    public void undoPromotion() {
+//        if (hasPromotion) {
+//            setType(TYPE_PAWN);
+//            hasPromotion = false;
+//        }
+//    }
 
     public void setIsCaptured(boolean isCaptured) {
         this.isCaptured = isCaptured;
@@ -286,4 +294,12 @@ public class Piece {
     public boolean isCaptured() {
         return isCaptured;
     }
+
+//    public Move getCastlingMove() {
+//        return castlingMove;
+//    }
+
+//    public void setCastlingMove(Move castlingMove) {
+//        this.castlingMove = castlingMove;
+//    }
 }

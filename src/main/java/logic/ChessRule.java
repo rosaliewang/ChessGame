@@ -93,13 +93,14 @@ public class ChessRule {
             return false;
         }
 
-        return isValidPieceMovementRules(sourcePiece, targetPiece, toRow, toColumn, false, true);
+        return isValidPieceMovementRules(move, sourcePiece, targetPiece, toRow, toColumn, false, true);
     }
 
     /**
      * helper method of isValidMove
      * checks if sourcePiece can move to (toRow, toColumn) and if there exists
      * a targetPiece to be capture
+     * @param move 1. simulation: null; 2. forPossibleMoves: move
      * @param sourcePiece piece to move
      * @param targetPiece piece on position (toRow, toColumn)
      * @param isSimulating if true, then is only simulating valid moves and modify nothing;
@@ -108,7 +109,7 @@ public class ChessRule {
      *                        simulation and checks if castling is possible; else, called
      *                        in {@link this.isValidMove()} to make valid moves
      */
-    public boolean isValidPieceMovementRules(Piece sourcePiece, Piece targetPiece,
+    public boolean isValidPieceMovementRules(Move move, Piece sourcePiece, Piece targetPiece,
                                               int toRow, int toColumn,
                                              boolean isSimulating, boolean forPossibleMove) {
         // validate piece movement rules
@@ -118,13 +119,13 @@ public class ChessRule {
                 validPieceMove = isValidBishopMove(sourcePiece, targetPiece,
                         toRow, toColumn, isSimulating); break;
             case Piece.TYPE_KING:
-                validPieceMove = isValidKingMove(sourcePiece, targetPiece,
+                validPieceMove = isValidKingMove(move, sourcePiece, targetPiece,
                         toRow, toColumn, isSimulating, forPossibleMove); break;
             case Piece.TYPE_KNIGHT:
                 validPieceMove = isValidKnightMove(sourcePiece, targetPiece,
                         toRow, toColumn, isSimulating); break;
             case Piece.TYPE_PAWN:
-                validPieceMove = isValidPawnMove(sourcePiece, targetPiece,
+                validPieceMove = isValidPawnMove(move, sourcePiece, targetPiece,
                         toRow, toColumn, isSimulating); break;
             case Piece.TYPE_QUEEN:
                 validPieceMove = isValidQueenMove(sourcePiece, targetPiece,
@@ -273,7 +274,7 @@ public class ChessRule {
                             for (int j = 0; j < attackPosition[0].length; j++) {
                                 if (!attackPosition[i][j]) {
                                     Piece targetPiece = chessGame.getNonCapturedPieceAtLocation(i, j);
-                                    if (isValidPieceMovementRules(piece, targetPiece, i, j, true, false))
+                                    if (isValidPieceMovementRules(null, piece, targetPiece, i, j, true, false))
                                         attackPosition[i][j] = true;
                                 }
                             }
@@ -287,7 +288,7 @@ public class ChessRule {
                     for (int j = 0; j < attackPosition[0].length; j++) {
                         if (!attackPosition[i][j]) {
                             Piece targetPiece = chessGame.getNonCapturedPieceAtLocation(i, j);
-                            if (isValidPieceMovementRules(sourcePiece, targetPiece, i, j, true, false)) {
+                            if (isValidPieceMovementRules(null, sourcePiece, targetPiece, i, j, true, false)) {
                                 sourcePiece.setIsCaptured(false);
                                 return true;
                             }
@@ -386,7 +387,7 @@ public class ChessRule {
      */
     private boolean inPawnAttack(Piece sourcePiece, Piece targetPiece,
                                  int toRow, int toColumn) {
-        return isValidPawnMove(sourcePiece, targetPiece, toRow, toColumn, true);
+        return isValidPawnMove(null, sourcePiece, targetPiece, toRow, toColumn, true);
     }
 
     /**
@@ -426,7 +427,7 @@ public class ChessRule {
     private boolean inKingAttack(Piece sourcePiece, Piece targetPiece,
                                  int toRow, int toColumn) {
         // no hint, is simulating and not prepare for castling
-        return isValidKingMove(sourcePiece, targetPiece, toRow, toColumn, true, false);
+        return isValidKingMove(null, sourcePiece, targetPiece, toRow, toColumn, true, false);
     }
 
     /**
@@ -516,7 +517,7 @@ public class ChessRule {
      * @param isSimulating just simulating, don't set any value
      * @return true if it is valid to move Pawn
      */
-    private boolean isValidPawnMove(Piece sourcePiece, Piece targetPiece,
+    private boolean isValidPawnMove(Move move, Piece sourcePiece, Piece targetPiece,
                                     int toRow, int toColumn,
                                     boolean isSimulating) {
         boolean isValid = false;
@@ -540,7 +541,9 @@ public class ChessRule {
                         // TODO: Pawn promotion
                         if (toRow == promotionRow) {
                             System.out.println("------promotion by pawn push------");
-                            sourcePiece.pawnPromotion();
+//                            move.pawnPromotion = true;
+                            move.pawnPromotion(sourcePiece, null);
+//                            sourcePiece.pawnPromotion();
                         }
                     }
                     isValid = true;
@@ -548,7 +551,10 @@ public class ChessRule {
                 } else if (fromRow == initialRow &&
                         fromRow + increment * 2 == toRow &&
                         !arePiecesBetweenSourceAndTarget(fromRow, fromColumn, toRow, toColumn, isSimulating)) {
-                    if (!isSimulating) sourcePiece.setLastMovedTwoSteps(true);
+                    if (!isSimulating) {
+                        sourcePiece.setLastMovedTwoSteps(true);
+                        move.pawnTwoSteps = true;
+                    }
                     isValid = true;
                 } else {
                     if (fromRow != initialRow)
@@ -584,13 +590,18 @@ public class ChessRule {
                             // TODO: Pawn promotion
                             if (toRow == promotionRow) {
                                 System.out.println("--------promotion by capture--------");
-                                sourcePiece.pawnPromotion();
+//                                sourcePiece.pawnPromotion();
+//                                move.pawnPromotion = true;
+                                move.pawnPromotion(sourcePiece, targetPiece);
                             }
                         }
                         isValid = true;
                         // TODO: pawn capture en passant
                     } else if (fromRow == toRow && targetPiece.isLastMovedTwoSteps()) {
-                        if (!isSimulating) sourcePiece.setCaptureEnPassant(true);
+                        if (!isSimulating) {
+//                            sourcePiece.setPerformedEnPassant(true);
+                            move.enPassant = true;
+                        }
                         isValid = true;
                     } else {
                         log(sourcePiece.toString() + " not moving one up and target location is capturable", isSimulating);
@@ -613,151 +624,6 @@ public class ChessRule {
                 isValid = false;
             }
         }
-
-//        if (isTargetLocationFree(targetPiece)) {
-//            if (fromColumn == toColumn) {
-//                // same column
-//                if (sourcePiece.getColor() == Piece.COLOR_WHITE) {
-//                    // white
-//                    if (fromRow + 1 == toRow) {
-//                        // move one up
-//                        if (!isSimulating) {
-//                            sourcePiece.setLastMovedTwoSteps(false);
-//                            // TODO: Pawn promotion
-//                            if (toRow == Piece.ROW_8) {
-//                                System.out.println("------promotion by pawn push------");
-//                                sourcePiece.pawnPromotion();
-//                            }
-//                        }
-//                        isValid = true;
-//                        // on its first move it may advance two squares
-//                    } else if (fromRow == Piece.ROW_2 &&
-//                            fromRow + 2 == toRow &&
-//                            !arePiecesBetweenSourceAndTarget(fromRow, fromColumn, toRow, toColumn, isSimulating)) {
-//                        if (!isSimulating) sourcePiece.setLastMovedTwoSteps(true);
-//                        isValid = true;
-//                    } else {
-//                        if (fromRow != Piece.ROW_2)
-//                            log(sourcePiece.toString() + " not moving one up and target location is free", isSimulating);
-//                        else log(sourcePiece.toString() + " not moving two up and target location is free", isSimulating);
-//
-//                        //
-//                        //
-//                        log("Line at: ChessRule.java " + new Exception().getStackTrace()[0].getLineNumber(), isSimulating);
-//
-//                        isValid = false;
-//                    }
-//                } else {
-//                    // black
-//                    if (fromRow - 1 == toRow) {
-//                        // move one down
-//                        if (!isSimulating) {
-//                            sourcePiece.setLastMovedTwoSteps(false);
-//                            // TODO: Pawn promotion
-//                            if (toRow == Piece.ROW_1) {
-//                                System.out.println("------promotion by pawn push------");
-//                                sourcePiece.pawnPromotion();
-//                            }
-//                        }
-//                        isValid = true;
-//                    } else if (fromRow == Piece.ROW_7 &&
-//                            fromRow - 2 == toRow &&
-//                            !arePiecesBetweenSourceAndTarget(fromRow, fromColumn, toRow, toColumn, isSimulating)) {
-//                        if (!isSimulating) sourcePiece.setLastMovedTwoSteps(true);
-//                        isValid = true;
-//                    } else {
-//                        if (fromRow != Piece.ROW_7)
-//                            log(sourcePiece.toString() + " not moving one down and target location is free", isSimulating);
-//                        else log(sourcePiece.toString() + " not moving two down and target location is free", isSimulating);
-//
-//                        //
-//                        //
-//                        log("Line at: ChessRule.java " + new Exception().getStackTrace()[0].getLineNumber(), isSimulating);
-//
-//                        isValid =  false;
-//                    }
-//                }
-//            } else {
-//                // not the same column
-//                log(sourcePiece.toString() + " not staying in same column and target location is free", isSimulating);
-//
-//                //
-//                //
-//                log("Line at: ChessRule.java " + new Exception().getStackTrace()[0].getLineNumber(), isSimulating);
-//
-//                isValid = false;
-//            }
-//            // or it may move
-//            // to a square occupied by an opponents piece, which is diagonally in front
-//            // of it on an adjacent file, capturing that piece.
-//        } else if (isTargetLocationCapturable(sourcePiece, targetPiece)) {
-//            if (fromColumn + 1 == toColumn || fromColumn - 1 == toColumn) {
-//                // one column to the right or left
-//                if (sourcePiece.getColor() == Piece.COLOR_WHITE) {
-//                    // white
-//                    if (fromRow + 1 == toRow) {
-//                        // move one up
-//                        if (!isSimulating) {
-//                            sourcePiece.setLastMovedTwoSteps(false);
-//                            // TODO: Pawn promotion
-//                            if (toRow == Piece.ROW_8) {
-//                                System.out.println("--------promotion by capture--------");
-//                                sourcePiece.pawnPromotion();
-//                            }
-//                        }
-//                        isValid = true;
-//                        // TODO: white pawn capture en passant
-//                    } else if (fromRow == toRow && targetPiece.isLastMovedTwoSteps()) {
-//                        if (!isSimulating) sourcePiece.setCaptureEnPassant(true);
-//                        isValid = true;
-//                    } else {
-//                        log(sourcePiece.toString() + " not moving one up and target location is capturable", isSimulating);
-//
-//                        //
-//                        //
-//                        log("Line at: ChessRule.java " + new Exception().getStackTrace()[0].getLineNumber(), isSimulating);
-//
-//                        isValid = false;
-//                    }
-//                } else {
-//                    // black
-//                    if (fromRow - 1 == toRow) {
-//                        // move one down
-//                        if (!isSimulating) {
-//                            sourcePiece.setLastMovedTwoSteps(false);
-//                            // TODO: Pawn promotion
-//                            if (toRow == Piece.ROW_1) {
-//                                System.out.println("--------promotion by capture--------");
-//                                sourcePiece.pawnPromotion();
-//                            }
-//                        }
-//                        isValid = true;
-//                        // TODO: black pawn capture en passant
-//                    } else if (fromRow == toRow && targetPiece.isLastMovedTwoSteps()) {
-//                        if (!isSimulating) sourcePiece.setCaptureEnPassant(true);
-//                        isValid = true;
-//                    } else {
-//                        log(sourcePiece.toString() + " not moving one up and target location is capturable", isSimulating);
-//
-//                        //
-//                        //
-//                        log("Line at: ChessRule.java " + new Exception().getStackTrace()[0].getLineNumber(), isSimulating);
-//
-//                        isValid = false;
-//                    }
-//                }
-//            }
-//            else {
-//                // note one column to the left or right
-//                log(sourcePiece.toString() + " not moving one column to left or right", isSimulating);
-//
-//                //
-//                //
-//                log("Line at: ChessRule.java " + new Exception().getStackTrace()[0].getLineNumber(), isSimulating);
-//
-//                isValid = false;
-//            }
-//        }
 
         // TODO:
         // The pawn has two special
@@ -805,7 +671,7 @@ public class ChessRule {
      * @param forPossibleMove if true, modify Rook related with castling
      * @return true if it is valid to move King
      */
-    private boolean isValidKingMove(Piece sourcePiece, Piece targetPiece,
+    private boolean isValidKingMove(Move move, Piece sourcePiece, Piece targetPiece,
                                     int toRow, int toColumn,
                                     boolean isSimulating, boolean forPossibleMove) {
         // target location possible?
@@ -833,6 +699,7 @@ public class ChessRule {
             // TODO: castling
             // ..
             if (isSimulating && !forPossibleMove) return false;
+//            if (isSimulating) return false;
 
             boolean isKingInCheck = chessGame.getGameState() == ChessGame.GAME_STATE_BLACK ?
                     chessGame.isBlackKingInCheck() :
@@ -840,12 +707,14 @@ public class ChessRule {
             if (sourcePiece.hasNotMoved() &&
                     diffRow == 0 && diffColumn == 2 &&
                     !isKingInCheck) {
-                Piece rookForCastling = castlingValid(fromRow, fromColumn, toRow, toColumn, isSimulating);
-                if (rookForCastling != null) {
+                Move castlingMove = castlingValid(fromRow, fromColumn, toRow, toColumn, isSimulating);
+                if (castlingMove != null) {
                     // TODO: preform castling
                     if (!isSimulating) {
-                        sourcePiece.setCastling(true);
-                        sourcePiece.setRookForCastling(rookForCastling);
+                        move.rookCastlingMove = castlingMove;
+//                        sourcePiece.setCastling(true);
+//                        sourcePiece.setRookForCastling(rookForCastling);
+//                        sourcePiece.setCastlingMove(new Move(fromRow, fromColumn, toRow, toColumn));
                         System.out.println("successful castling for " + sourcePiece.toString());
                     }
                     return true;
@@ -874,11 +743,12 @@ public class ChessRule {
     /**
      * checks if it is valid to perform castling
      * @param isSimulating if true, don't set position and modify related Rook
-     * @return null if not valid, {@link this.rookForCastling} if valid
+     * @return null if not valid, move for rook if valid
      */
-    private Piece castlingValid(int fromRow, int fromColumn, int toRow, int toColumn,
+    private Move castlingValid(int fromRow, int fromColumn, int toRow, int toColumn,
                                 boolean isSimulating) {
         Piece rookForCastling;
+        Move move = new Move(0, 0, 0, 0);
 
         if (toColumn == Piece.COLUMN_C) {
             rookForCastling = chessGame.getNonCapturedPieceAtLocation(fromRow, Piece.COLUMN_A);
@@ -891,14 +761,21 @@ public class ChessRule {
                 rookForCastling.hasNotMoved() &&
                 !arePiecesBetweenSourceAndTarget(fromRow, fromColumn,
                         toRow, rookForCastling.getColumn(), isSimulating)) {
+            move.sourceColumn = rookForCastling.getColumn();
+            move.sourceRow = fromRow;
+            move.targetRow = fromRow;
             if (toColumn == Piece.COLUMN_C) {
-                if (!isSimulating)
-                    rookForCastling.setColumn(Piece.COLUMN_D);
+                if (!isSimulating) {
+                    move.targetColumn = Piece.COLUMN_D;
+//                    rookForCastling.setColumn(Piece.COLUMN_D);
+                }
             } else {
-                if (!isSimulating)
-                    rookForCastling.setColumn(Piece.COLUMN_F);
+                if (!isSimulating) {
+                    move.targetColumn = Piece.COLUMN_F;
+//                    rookForCastling.setColumn(Piece.COLUMN_F);
+                }
             }
-            return rookForCastling;
+            return move;
         }
         else return null;
     }
