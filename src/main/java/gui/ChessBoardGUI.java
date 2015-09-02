@@ -47,6 +47,8 @@ public class ChessBoardGUI extends JPanel implements PlayerHandler {
 
     private boolean draggingGamePiecesEnabled;
 
+    private final Object lock = new Object();
+
     public ChessBoardGUI(ChessGame chessGame) {
         this.setLayout(null);
 
@@ -154,7 +156,7 @@ public class ChessBoardGUI extends JPanel implements PlayerHandler {
         new Thread(this.chessGame).start();
     }
 
-    private Image getPieceImage(int color, int type) {
+    public Image getPieceImage(int color, int type) {
         String fileName = color == Piece.COLOR_WHITE ? "w" : "b";
 
         switch (type) {
@@ -291,7 +293,7 @@ public class ChessBoardGUI extends JPanel implements PlayerHandler {
     }
 
     /**
-     * set current move for the getMove() method if the location is valid.
+     * change location of given piece, if the location is valid.
      * If the location is not valid, move the piece back to its original
      * position.
      */
@@ -319,9 +321,9 @@ public class ChessBoardGUI extends JPanel implements PlayerHandler {
             } else if (move.rookCastlingMove != null) {
                 Move castlingMove = move.rookCastlingMove;
                 Piece piece = chessGame.getNonCapturedPieceAtLocation(
-                        castlingMove.sourceRow, castlingMove.sourceColumn);
-                piece.setRow(castlingMove.targetRow);
-                piece.setColumn(castlingMove.targetColumn);
+                        castlingMove.targetRow, castlingMove.targetColumn);
+//                piece.setRow(castlingMove.targetRow);
+//                piece.setColumn(castlingMove.targetColumn);
                 for (GUIPiece guiPiece : this.guiPieces) {
                     if (guiPiece.getPiece() == piece) {
                         guiPiece.correctPiecePosition(); // need to correct in order to draw
@@ -409,7 +411,7 @@ public class ChessBoardGUI extends JPanel implements PlayerHandler {
      * get non-captured the gui piece at the specified position
      * @return the gui piece at the specified position, null if there is no piece
      */
-    private GUIPiece getGuiPieceAt(int row, int column) {
+    public GUIPiece getGuiPieceAt(int row, int column) {
         for (GUIPiece guiPiece : this.guiPieces) {
             if (guiPiece.getPiece().getRow() == row &&
                     guiPiece.getPiece().getColumn() == column &&
@@ -418,6 +420,12 @@ public class ChessBoardGUI extends JPanel implements PlayerHandler {
             }
         }
         return null;
+    }
+
+    public List<GUIPiece> getGuiPieces() {
+        synchronized (lock) {
+            return guiPieces;
+        }
     }
 
     public static void main(String[] args) {

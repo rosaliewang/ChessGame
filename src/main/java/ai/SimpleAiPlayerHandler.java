@@ -1,8 +1,11 @@
 package ai;
 
 import console.ChessConsole;
+import gui.ChessBoardGUI;
+import gui.GUIPiece;
 import logic.*;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,6 +15,7 @@ import java.util.List;
 public class SimpleAiPlayerHandler implements PlayerHandler{
     private ChessGame chessGame;
     private ChessRule chessRule;
+    public ChessBoardGUI chessBoardGUI;
 
     /**
      * number of moves to look into the future
@@ -43,11 +47,12 @@ public class SimpleAiPlayerHandler implements PlayerHandler{
 
         for (Move move : validMoves) {
             executeMove(move);
-            //System.out.println("evaluate move: "+move+" =========================================");
-            int evaluationResult = -1 * negaMax(this.maxDepth,"");
-            //System.out.println("result: "+evaluationResult);
+//            System.out.println("evaluate move: " + move + " =========================================");
+            int evaluationResult = -1 * negaMax(this.maxDepth, "");
+//            System.out.println("result: " + evaluationResult);
             undoMove(move);
-            if ( evaluationResult > bestResult) {
+
+            if (evaluationResult > bestResult) {
                 bestResult = evaluationResult;
                 bestMove = move;
             }
@@ -59,7 +64,38 @@ public class SimpleAiPlayerHandler implements PlayerHandler{
     @Override
     public void moveSuccessfullyExecuted(Move move) {
         // we are using the same chessGame instance, so no need to do anything here.
-        System.out.println("executed: " + move);
+        if (move != null) {
+            System.out.println("executed: " + move);
+
+            chessGame.addToHistoryMove(move);
+
+            if (chessBoardGUI != null) {
+                List<GUIPiece> guiPieces = chessBoardGUI.getGuiPieces();
+
+                GUIPiece dragPiece = chessBoardGUI.getGuiPieceAt(move.targetRow, move.targetColumn);
+                dragPiece.correctPiecePosition();
+
+                // if Pawn promotion, change Pawn image
+                if (move.pawnPromotion) {
+//                System.out.println("pawn promotion in chessBoardGUI");
+                    Piece piece = dragPiece.getPiece();
+                    Image img = chessBoardGUI.getPieceImage(piece.getColor(), piece.getType());
+                    dragPiece.setImage(img);
+                    // if castling, also modify related Rook's guiPiece
+                } else if (move.rookCastlingMove != null) {
+                    Move castlingMove = move.rookCastlingMove;
+                    Piece piece = chessGame.getNonCapturedPieceAtLocation(
+                            castlingMove.targetRow, castlingMove.targetColumn);
+                    for (GUIPiece guiPiece : guiPieces) {
+                        if (guiPiece.getPiece() == piece) {
+                            guiPiece.correctPiecePosition(); // need to correct in order to draw
+                            break;
+                        }
+                    }
+                }
+                chessBoardGUI.repaint();
+            }
+        }
     }
 
 
@@ -123,9 +159,8 @@ public class SimpleAiPlayerHandler implements PlayerHandler{
     private List<Move> generateMoves(boolean debug) {
         List<Piece> pieces = this.chessGame.getPieces();
         List<Move> validMoves = new ArrayList<Move>();
-        Move testMove = new Move(0, 0, 0, 0);
 
-        int pieceColor = (this.chessGame.getGameState()==ChessGame.GAME_STATE_WHITE ?
+        int pieceColor = (this.chessGame.getGameState() == ChessGame.GAME_STATE_WHITE ?
                 Piece.COLOR_WHITE :
                 Piece.COLOR_BLACK);
 
@@ -134,25 +169,20 @@ public class SimpleAiPlayerHandler implements PlayerHandler{
             // only look at pieces of current players color
             if (pieceColor == piece.getColor()) {
                 // start generating move
-                testMove.sourceRow = piece.getRow();
-                testMove.sourceColumn = piece.getColumn();
-
                 // iterate over all board rows and columns
                 for (int targetRow = Piece.ROW_1; targetRow <= Piece.ROW_8; targetRow++) {
                     for (int targetColumn = Piece.COLUMN_A; targetColumn <= Piece.COLUMN_H; targetColumn++) {
-
+                        Move testMove = new Move(piece.getRow(), piece.getColumn(), targetRow, targetColumn);
+                        testMove.isAi = true;
                         // finish generating move
-                        testMove.targetRow = targetRow;
-                        testMove.targetColumn = targetColumn;
 
-                        if (debug) System.out.println("testing move: "+testMove);
+                        if (debug) System.out.println("testing move: " + testMove);
 
                         // check if generated move is valid
-                        if (this.chessRule.isValidMove(testMove, true)) {
+                        if (this.chessRule.isValidMove(testMove, false)) {
                             // valid move
-                            Move testMoveClone = testMove.clone();
-                            testMoveClone.setIsValid(true);
-                            validMoves.add(testMoveClone);
+                            testMove.setIsValid(true);
+                            validMoves.add(testMove);
                         } else {
                             // generated move is invalid, so we skip it
                         }
@@ -197,7 +227,7 @@ public class SimpleAiPlayerHandler implements PlayerHandler{
         // return evaluation result depending on who's turn it is
         int gameState = this.chessGame.getGameState();
 
-        if ( gameState == ChessGame.GAME_STATE_BLACK) {
+        if (gameState == ChessGame.GAME_STATE_BLACK) {
             return scoreBlack - scoreWhite;
         } else if (gameState == ChessGame.GAME_STATE_WHITE) {
             return scoreWhite - scoreBlack;
@@ -329,8 +359,7 @@ public class SimpleAiPlayerHandler implements PlayerHandler{
   a  b  c  d  e  f  g  h
 		 */
 
-        List<Piece> pieces = ch.getPieces();
-        pieces = new ArrayList<Piece>();
+        ch.clearPieces();
         ch.addPiece(Piece.COLOR_BLACK, Piece.TYPE_ROOK, Piece.ROW_8, Piece.COLUMN_A);
         ch.addPiece(Piece.COLOR_BLACK, Piece.TYPE_ROOK, Piece.ROW_8, Piece.COLUMN_H);
         ch.addPiece(Piece.COLOR_BLACK, Piece.TYPE_PAWN, Piece.ROW_7, Piece.COLUMN_A);
@@ -350,7 +379,7 @@ public class SimpleAiPlayerHandler implements PlayerHandler{
         ch.addPiece(Piece.COLOR_WHITE, Piece.TYPE_KING, Piece.ROW_1, Piece.COLUMN_E);
         ch.addPiece(Piece.COLOR_WHITE, Piece.TYPE_ROOK, Piece.ROW_1, Piece.COLUMN_H);
         ch.setGameState(ChessGame.GAME_STATE_BLACK);
-        ChessConsole.printCurrentGameState(ch);
+//        ChessConsole.printCurrentGameState(ch);
         System.out.println("score: "+ai.evaluateState());
         System.out.println("move: "+ai.getBestMove()); //c4 b4
     }

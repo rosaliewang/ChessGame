@@ -76,7 +76,7 @@ public class ChessRule {
             //
             log("Line at: ChessRule.java " + new Exception().getStackTrace()[0].getLineNumber(), true);
 
-            ChessConsole.printCurrentGameState(this.chessGame);
+//            ChessConsole.printCurrentGameState(this.chessGame);
             // it's not your turn
             return false;
         }
@@ -540,7 +540,9 @@ public class ChessRule {
                         sourcePiece.setLastMovedTwoSteps(false);
                         // TODO: Pawn promotion
                         if (toRow == promotionRow) {
-                            System.out.println("------promotion by pawn push------");
+//                            System.out.println("------promotion by pawn push------");
+//                            System.out.println(move.toString());
+//                            System.out.println("------------------------------------");
 //                            move.pawnPromotion = true;
                             move.pawnPromotion(sourcePiece, null);
 //                            sourcePiece.pawnPromotion();
@@ -589,9 +591,11 @@ public class ChessRule {
                             sourcePiece.setLastMovedTwoSteps(false);
                             // TODO: Pawn promotion
                             if (toRow == promotionRow) {
-                                System.out.println("--------promotion by capture--------");
+//                                System.out.println("--------promotion by capture--------");
 //                                sourcePiece.pawnPromotion();
 //                                move.pawnPromotion = true;
+//                                System.out.println(move.toString());
+//                                System.out.println("------------------------------------");
                                 move.pawnPromotion(sourcePiece, targetPiece);
                             }
                         }
@@ -707,7 +711,7 @@ public class ChessRule {
             if (sourcePiece.hasNotMoved() &&
                     diffRow == 0 && diffColumn == 2 &&
                     !isKingInCheck) {
-                Move castlingMove = castlingValid(fromRow, fromColumn, toRow, toColumn, isSimulating);
+                Move castlingMove = castlingValid(move, sourcePiece, toRow, toColumn, isSimulating);
                 if (castlingMove != null) {
                     // TODO: preform castling
                     if (!isSimulating) {
@@ -715,7 +719,7 @@ public class ChessRule {
 //                        sourcePiece.setCastling(true);
 //                        sourcePiece.setRookForCastling(rookForCastling);
 //                        sourcePiece.setCastlingMove(new Move(fromRow, fromColumn, toRow, toColumn));
-                        System.out.println("successful castling for " + sourcePiece.toString());
+//                        System.out.println("successful castling for " + sourcePiece.toString());
                     }
                     return true;
                 }
@@ -745,10 +749,12 @@ public class ChessRule {
      * @param isSimulating if true, don't set position and modify related Rook
      * @return null if not valid, move for rook if valid
      */
-    private Move castlingValid(int fromRow, int fromColumn, int toRow, int toColumn,
+    private Move castlingValid(Move move, Piece sourcePiece, int toRow, int toColumn,
                                 boolean isSimulating) {
+        int fromRow = sourcePiece.getRow();
+        int fromColumn = sourcePiece.getColumn();
         Piece rookForCastling;
-        Move move = new Move(0, 0, 0, 0);
+        Move castlingMove = new Move(0, 0, 0, 0);
 
         if (toColumn == Piece.COLUMN_C) {
             rookForCastling = chessGame.getNonCapturedPieceAtLocation(fromRow, Piece.COLUMN_A);
@@ -758,24 +764,28 @@ public class ChessRule {
 
         if (rookForCastling!= null &&
                 rookForCastling.getType() == Piece.TYPE_ROOK &&
+                rookForCastling.getColor() == sourcePiece.getColor() &&
                 rookForCastling.hasNotMoved() &&
                 !arePiecesBetweenSourceAndTarget(fromRow, fromColumn,
                         toRow, rookForCastling.getColumn(), isSimulating)) {
-            move.sourceColumn = rookForCastling.getColumn();
-            move.sourceRow = fromRow;
-            move.targetRow = fromRow;
-            if (toColumn == Piece.COLUMN_C) {
-                if (!isSimulating) {
-                    move.targetColumn = Piece.COLUMN_D;
-//                    rookForCastling.setColumn(Piece.COLUMN_D);
-                }
-            } else {
-                if (!isSimulating) {
-                    move.targetColumn = Piece.COLUMN_F;
-//                    rookForCastling.setColumn(Piece.COLUMN_F);
+            castlingMove.sourceColumn = rookForCastling.getColumn();
+            castlingMove.sourceRow = fromRow;
+            castlingMove.targetRow = fromRow;
+            if (move != null) castlingMove.isAi = move.isAi;
+            if (!move.isAi) {
+                if (toColumn == Piece.COLUMN_C) {
+                    if (!isSimulating) {
+                        castlingMove.targetColumn = Piece.COLUMN_D;
+                        rookForCastling.setColumn(Piece.COLUMN_D);
+                    }
+                } else {
+                    if (!isSimulating) {
+                        castlingMove.targetColumn = Piece.COLUMN_F;
+                        rookForCastling.setColumn(Piece.COLUMN_F);
+                    }
                 }
             }
-            return move;
+            return castlingMove;
         }
         else return null;
     }

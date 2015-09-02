@@ -12,6 +12,7 @@ public class Move {
     public int targetRow;
     public int targetColumn;
     private boolean isValid;
+    public boolean isAi; // should promotion to Queen
 
     public int score;
     public Piece capturedPiece;
@@ -49,9 +50,17 @@ public class Move {
         this.isValid = isValid;
     }
 
-    public Move clone(){
-        return new Move(sourceRow, sourceColumn, targetRow, targetColumn);
-    }
+//    public Move clone(){
+//        Move clonedMove = new Move(sourceRow, sourceColumn, targetRow, targetColumn);
+//        clonedMove.isAi = isAi;
+//        clonedMove.rookCastlingMove = rookCastlingMove;
+//        clonedMove.pawnPromotion = pawnPromotion;
+//        clonedMove.pawnTwoSteps = pawnTwoSteps;
+//        clonedMove.enPassant = enPassant;
+//        clonedMove.capturedPiece = capturedPiece;
+//
+//        return clonedMove;
+//    }
 
     /**
      * move to (x, y), capture -> on drawing: modify move to (x - 1, y)
@@ -65,11 +74,16 @@ public class Move {
      * for Pawn promotion
      */
     public void pawnPromotion(Piece piece, Piece pieceToCapture) {
-        System.out.println(Thread.currentThread() + " pawn promotion");
+//        System.out.println(Thread.currentThread() + " pawn promotion");
         pawnPromotion = true;
 
         if (pieceToCapture != null) {
             if (pieceToCapture.getType() == Piece.TYPE_KING) return;
+        }
+
+        if (isAi) {
+            piece.setType(Piece.TYPE_QUEEN);
+            return;
         }
 
         String input;

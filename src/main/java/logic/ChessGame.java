@@ -1,5 +1,7 @@
 package logic;
 
+import ai.SimpleAiPlayerHandler;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,7 +65,9 @@ public class ChessGame implements Runnable {
             // players are still missing
             try {
                 Thread.sleep(1000);
-            } catch (InterruptedException ignored) {}
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
 
         // set start player
@@ -83,6 +87,7 @@ public class ChessGame implements Runnable {
 //                    " 9.ChessGame.startGame(): threatening pieces 0 after swapActivePlayer()");
                 System.out.println(Thread.currentThread() + " 10.ChessGame.startGame(): calling gameStateAnnouncer()");
                 gameStateAnnouncer();
+                printPieces();
             }
 //            System.out.println("11.------------------------------------");
         }
@@ -105,8 +110,8 @@ public class ChessGame implements Runnable {
 
         this.changeGameState();
 
-        if (!isGameEndState()) {
-            System.out.println("swap player: game end state here");
+        if (this.activePlayerHandler.getClass() != SimpleAiPlayerHandler.class &&
+                !isGameEndState()) {
             // TODO
             setThreateningPieces(chessRule.isKingInCheck());
 
@@ -233,7 +238,7 @@ public class ChessGame implements Runnable {
         addPiece(Piece.COLOR_WHITE, Piece.TYPE_PAWN, Piece.ROW_7, Piece.COLUMN_D);
 
 //        addPiece(Piece.COLOR_BLACK, Piece.TYPE_ROOK, Piece.ROW_8, Piece.COLUMN_A);
-        addPiece(Piece.COLOR_BLACK, Piece.TYPE_KNIGHT, Piece.ROW_8, Piece.COLUMN_B);
+//        addPiece(Piece.COLOR_BLACK, Piece.TYPE_KNIGHT, Piece.ROW_8, Piece.COLUMN_B);
 //        addPiece(Piece.COLOR_BLACK, Piece.TYPE_BISHOP, Piece.ROW_8, Piece.COLUMN_C);
 //        addPiece(Piece.COLOR_BLACK, Piece.TYPE_QUEEN, Piece.ROW_8, Piece.COLUMN_D);
         addPiece(Piece.COLOR_BLACK, Piece.TYPE_KING, Piece.ROW_8, Piece.COLUMN_E);
@@ -296,25 +301,30 @@ public class ChessGame implements Runnable {
         //set captured piece in move
         // this information is needed in the undoMove() method.
         move.capturedPiece = this.getNonCapturedPieceAtLocation(move.targetRow, move.targetColumn);
+
 //        System.out.println(pieces);
         Piece piece = getNonCapturedPieceAtLocation(move.sourceRow, move.sourceColumn);
 
         //check if the move is capturing an opponent piece
         assert piece != null;
-        int opponentColor = (piece.getColor() == Piece.COLOR_BLACK ?
-                Piece.COLOR_WHITE : Piece.COLOR_BLACK);
         // capture
-        if (hasNonCapturedPieceAtLocation(opponentColor, move.targetRow, move.targetColumn)) {
-            Piece opponentPiece = getNonCapturedPieceAtLocation(move.targetRow, move.targetColumn);
-            this.pieces.remove(opponentPiece);
-            this.capturedPieces.add(opponentPiece);
-            opponentPiece.setIsCaptured(true); // for guiPiece
+        if (move.capturedPiece != null) {
+            this.pieces.remove(move.capturedPiece);
+            this.capturedPieces.add(move.capturedPiece);
+            move.capturedPiece.setIsCaptured(true); // for guiPiece
         }
 
         if (move.enPassant) {
             move.enPassantPosition(piece.getColor() == Piece.COLOR_BLACK ? -1 : 1);
 //            move.targetRow += piece.getColor() == Piece.COLOR_BLACK ? -1 : 1;
 //            piece.setPerformedEnPassant(false);
+        } else if (move.isAi && move.rookCastlingMove != null) {
+            // for Ai
+            Move castlingMove = move.rookCastlingMove;
+            Piece rookForCastling = getNonCapturedPieceAtLocation(
+                    castlingMove.sourceRow, castlingMove.sourceColumn);
+            rookForCastling.setRow(castlingMove.targetRow);
+            rookForCastling.setColumn(castlingMove.targetColumn);
         }
 //        else if (move.pawnPromotion) {
 //            move.pawnPromotion(piece);
@@ -427,6 +437,7 @@ public class ChessGame implements Runnable {
 //            piece.setPerformedEnPassant(false);
         } else if (move.rookCastlingMove != null) { // castling[King]
             Move castlingMove = move.rookCastlingMove;
+//            System.out.println(move.toString());
 //            piece.setCastlingMove(null);
 //            piece.setRookForCastling(null);
             piece.setHasNotMoved(true);
@@ -434,6 +445,7 @@ public class ChessGame implements Runnable {
                     setHasNotMoved(true);
 
             undoMove(castlingMove);
+
         } else if (piece.isLastMovedTwoSteps()) { // first move[Pawn]
             piece.setLastMovedTwoSteps(false);
         }
@@ -522,6 +534,10 @@ public class ChessGame implements Runnable {
         }
     }
 
+    public void clearPieces() {
+        pieces = new ArrayList<Piece>();
+    }
+
     /**
      * switches between the different game states
      */
@@ -529,7 +545,7 @@ public class ChessGame implements Runnable {
         // check if game end condition has been reached
         //
         if (this.isGameEndConditionReached()) {
-            System.out.println("game end reached");
+//            System.out.println("game end reached");
             if (isStalemate()) {
                 this.gameState = ChessGame.GAME_STATE_END_DRAW;
             } else if (this.gameState == ChessGame.GAME_STATE_BLACK) {
