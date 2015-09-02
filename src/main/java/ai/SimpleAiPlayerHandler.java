@@ -46,11 +46,23 @@ public class SimpleAiPlayerHandler implements PlayerHandler{
         Move bestMove = null;
 
         for (Move move : validMoves) {
+
+//            GUIPiece guiPiece = chessBoardGUI.getGuiPieceAt(Piece.ROW_1, Piece.COLUMN_A);
+//            if (guiPiece.toString().equals("white R 1/A 302/402")) {
+//                System.out.println(move.toString());
+//            }
+
             executeMove(move);
 //            System.out.println("evaluate move: " + move + " =========================================");
             int evaluationResult = -1 * negaMax(this.maxDepth, "");
 //            System.out.println("result: " + evaluationResult);
             undoMove(move);
+
+//            guiPiece = chessBoardGUI.getGuiPieceAt(Piece.ROW_1, Piece.COLUMN_A);
+//            if (!guiPiece.toString().equals("white R 1/A 302/402")) {
+//                System.out.println(move.toString());
+//                System.out.println();
+//            }
 
             if (evaluationResult > bestResult) {
                 bestResult = evaluationResult;
@@ -67,6 +79,7 @@ public class SimpleAiPlayerHandler implements PlayerHandler{
         if (move != null) {
             System.out.println("executed: " + move);
 
+            chessBoardGUI.lastMove = move;
             chessGame.addToHistoryMove(move);
 
             if (chessBoardGUI != null) {
@@ -178,6 +191,9 @@ public class SimpleAiPlayerHandler implements PlayerHandler{
 
                         if (debug) System.out.println("testing move: " + testMove);
 
+//                        if (testMove.toString().equals("1E->1G")) {
+//                            System.out.println("stop");
+//                        }
                         // check if generated move is valid
                         if (this.chessRule.isValidMove(testMove, false)) {
                             // valid move

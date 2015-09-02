@@ -87,12 +87,13 @@ public class ChessGame implements Runnable {
 //                    " 9.ChessGame.startGame(): threatening pieces 0 after swapActivePlayer()");
                 System.out.println(Thread.currentThread() + " 10.ChessGame.startGame(): calling gameStateAnnouncer()");
                 gameStateAnnouncer();
-                printPieces();
+//                printPieces();
             }
 //            System.out.println("11.------------------------------------");
         }
 
         System.out.println(Thread.currentThread() + " ChessGame: game ended");
+        printHistoryMoves();
         isRunning = false;
     }
 

@@ -754,7 +754,7 @@ public class ChessRule {
         int fromRow = sourcePiece.getRow();
         int fromColumn = sourcePiece.getColumn();
         Piece rookForCastling;
-        Move castlingMove = new Move(0, 0, 0, 0);
+        Move castlingMove;
 
         if (toColumn == Piece.COLUMN_C) {
             rookForCastling = chessGame.getNonCapturedPieceAtLocation(fromRow, Piece.COLUMN_A);
@@ -768,21 +768,19 @@ public class ChessRule {
                 rookForCastling.hasNotMoved() &&
                 !arePiecesBetweenSourceAndTarget(fromRow, fromColumn,
                         toRow, rookForCastling.getColumn(), isSimulating)) {
-            castlingMove.sourceColumn = rookForCastling.getColumn();
-            castlingMove.sourceRow = fromRow;
-            castlingMove.targetRow = fromRow;
+            // should return castlingMove
+            castlingMove = new Move(fromRow, rookForCastling.getColumn(),
+                    fromRow, 0);
             if (move != null) castlingMove.isAi = move.isAi;
-            if (!move.isAi) {
-                if (toColumn == Piece.COLUMN_C) {
-                    if (!isSimulating) {
-                        castlingMove.targetColumn = Piece.COLUMN_D;
-                        rookForCastling.setColumn(Piece.COLUMN_D);
-                    }
-                } else {
-                    if (!isSimulating) {
-                        castlingMove.targetColumn = Piece.COLUMN_F;
-                        rookForCastling.setColumn(Piece.COLUMN_F);
-                    }
+            if (toColumn == Piece.COLUMN_C) {
+                if (!isSimulating) {
+                    castlingMove.targetColumn = Piece.COLUMN_D;
+                    if (move != null && !move.isAi) rookForCastling.setColumn(Piece.COLUMN_D);
+                }
+            } else {
+                if (!isSimulating) {
+                    castlingMove.targetColumn = Piece.COLUMN_F;
+                    if (move != null && !move.isAi) rookForCastling.setColumn(Piece.COLUMN_F);
                 }
             }
             return castlingMove;

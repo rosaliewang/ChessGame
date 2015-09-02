@@ -40,7 +40,7 @@ public class ChessBoardGUI extends JPanel implements PlayerHandler {
 
     private PiecesListener piecesListener;
 
-    private Move lastMove; // the last executed move (used for highlighting)
+    public Move lastMove; // the last executed move (used for highlighting)
     private Move currentMove;
 
     private boolean debug; // set debug true
