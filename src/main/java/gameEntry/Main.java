@@ -13,7 +13,7 @@ public class Main {
         ChessGame chessGame = new ChessGame();
         ChessBoardGUI chessGui = new ChessBoardGUI(chessGame);
         SimpleAiPlayerHandler ai1 = new SimpleAiPlayerHandler(chessGame);
-        ai1.maxDepth = 1;
+        ai1.maxDepth = 2;
         setPlayer(chessGame, chessGui, ai1);
         new Thread(chessGame).start();
     }

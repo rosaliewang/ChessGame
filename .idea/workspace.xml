@@ -2,10 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="98c468b1-2172-4641-aa4b-6fe3cd55412a" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/gui/ChessBoardGUI.java" afterPath="$PROJECT_DIR$/src/main/java/gui/ChessBoardGUI.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/logic/ChessGame.java" afterPath="$PROJECT_DIR$/src/main/java/logic/ChessGame.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/logic/ChessRule.java" afterPath="$PROJECT_DIR$/src/main/java/logic/ChessRule.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/ai/SimpleAiPlayerHandler.java" afterPath="$PROJECT_DIR$/src/main/java/ai/SimpleAiPlayerHandler.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/java/gameEntry/Main.java" afterPath="$PROJECT_DIR$/src/main/java/gameEntry/Main.java" />
     </list>
     <ignored path="Chess.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -82,10 +79,10 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Main.java" pinned="false" current-in-tab="true">
+      <file leaf-file-name="Main.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main/java/gameEntry/Main.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.21804512">
+            <state vertical-scroll-proportion="0.0">
               <caret line="15" column="24" selection-start-line="15" selection-start-column="24" selection-end-line="15" selection-end-column="24" />
               <folding />
             </state>
@@ -110,10 +107,10 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="ChessRule.java" pinned="false" current-in-tab="false">
+      <file leaf-file-name="ChessRule.java" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/main/java/logic/ChessRule.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-46.962963">
+            <state vertical-scroll-proportion="30.0">
               <caret line="780" column="36" selection-start-line="780" selection-start-column="36" selection-end-line="780" selection-end-column="36" />
               <folding>
                 <element signature="imports" expanded="true" />
@@ -841,12 +838,12 @@
       <workItem from="1440140376665" duration="9507000" />
       <workItem from="1440368543610" duration="74000" />
       <workItem from="1440368628352" duration="449000" />
-      <workItem from="1441133181575" duration="33516000" />
+      <workItem from="1441133181575" duration="33772000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="108784000" />
+    <option name="totallyTimeSpent" value="109040000" />
   </component>
   <component name="TodoView" selected-index="3">
     <todo-panel id="selected-file">
@@ -879,7 +876,7 @@
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.24959612" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.3739003" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3739003" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -1724,21 +1721,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/logic/ChessRule.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-46.962963">
-          <caret line="780" column="36" selection-start-line="780" selection-start-column="36" selection-end-line="780" selection-end-column="36" />
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="e#18637#18638#0" expanded="true" />
-            <element signature="e#18679#18680#0" expanded="true" />
-            <element signature="e#37837#37864#0" expanded="true" />
-            <element signature="e#39289#39290#0" expanded="true" />
-            <element signature="e#39360#39361#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/logic/ChessGame.java">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="-4.740741">
@@ -1804,9 +1786,24 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/gameEntry/Main.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.21804512">
+        <state vertical-scroll-proportion="0.0">
           <caret line="15" column="24" selection-start-line="15" selection-start-column="24" selection-end-line="15" selection-end-column="24" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/logic/ChessRule.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="30.0">
+          <caret line="780" column="36" selection-start-line="780" selection-start-column="36" selection-end-line="780" selection-end-column="36" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="e#18637#18638#0" expanded="true" />
+            <element signature="e#18679#18680#0" expanded="true" />
+            <element signature="e#37837#37864#0" expanded="true" />
+            <element signature="e#39289#39290#0" expanded="true" />
+            <element signature="e#39360#39361#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
