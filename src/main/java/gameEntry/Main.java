@@ -1,4 +1,4 @@
-package gameEntry;
+package gameentry;
 
 import ai.SimpleAiPlayerHandler;
 import gui.ChessBoardGUI;
